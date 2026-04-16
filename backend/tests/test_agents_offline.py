@@ -16,7 +16,7 @@ from app.models.agent import AgentInput
 @pytest.mark.asyncio
 async def test_coding_offline_produces_output():
     # Need an encounter & a claim in the DB to operate on
-    from app.database import transaction, get_connection
+    from app.database import get_connection
     from datetime import date
     conn = get_connection()
     conn.execute(

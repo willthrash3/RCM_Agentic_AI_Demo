@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
-
 def test_list_claims_ok(api_client, auth_headers):
     r = api_client.get("/api/v1/claims", headers=auth_headers)
     assert r.status_code == 200

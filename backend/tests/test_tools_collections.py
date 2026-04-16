@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
-
 def test_generate_statement_contains_balance():
     from app.tools.collections_tools import generate_statement
     stmt = generate_statement("pt-001", "clm-001", 150.0)

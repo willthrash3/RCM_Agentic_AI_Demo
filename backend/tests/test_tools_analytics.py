@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
-
 def test_get_ar_aging_snapshot_returns_structure():
     from app.tools.analytics_tools import get_ar_aging_snapshot
     result = get_ar_aging_snapshot()
