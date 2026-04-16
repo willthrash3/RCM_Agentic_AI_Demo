@@ -7,8 +7,11 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 os.environ["AGENT_OFFLINE_MODE"] = "true"  # force offline/fallback for CI
+
+API_KEY = "demo-key-12345"  # matches Settings.demo_api_key default
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -37,3 +40,15 @@ def _seed(_tmp_db) -> None:
         )
     yield
     close_connection()
+
+
+@pytest.fixture(scope="session")
+def api_client(_seed):
+    from app.main import app
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture(scope="session")
+def auth_headers():
+    return {"X-API-Key": API_KEY}
