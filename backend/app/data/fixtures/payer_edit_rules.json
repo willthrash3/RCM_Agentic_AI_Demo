@@ -1,0 +1,23 @@
+{
+  "payer-001": [
+    {"rule_id": "MCR-LCD-001", "cpt": "20610", "requires_dx_in": ["M17.11", "M25.561"], "description": "Joint injection requires OA dx", "severity": "Critical"},
+    {"rule_id": "MCR-AUTH-001", "cpt": "99223", "requires_auth": true, "description": "High-complexity inpatient requires auth", "severity": "Critical"},
+    {"rule_id": "MCR-MOD-001", "cpt": "99214", "requires_modifier_if_same_day_as": ["20610"], "modifier": "25", "description": "Modifier 25 required for E&M same day as procedure", "severity": "Error"}
+  ],
+  "payer-002": [
+    {"rule_id": "TNM-TF-001", "timely_filing_warn_days": 14, "description": "Alert if TF within 14 days", "severity": "Warning"},
+    {"rule_id": "TNM-AUTH-001", "cpt": "99285", "requires_auth": true, "description": "High-complexity ED requires notification within 24h", "severity": "Error"}
+  ],
+  "payer-003": [
+    {"rule_id": "BSC-LCD-001", "cpt": "99214", "requires_dx_in": ["I10", "E11.9", "E11.65", "F32.9", "F41.1", "E78.5", "J06.9", "M54.5", "N39.0", "K21.0", "Z00.00"], "description": "Moderate-complexity E&M LCD restrictions", "severity": "Error"},
+    {"rule_id": "BSC-AUTH-001", "cpt": "20610", "requires_auth": true, "description": "Joint injection requires auth", "severity": "Critical"}
+  ],
+  "payer-004": [
+    {"rule_id": "APX-MOD-001", "cpt_pair": ["99214", "20610"], "requires_modifier": "25", "description": "Modifier 25 required when E&M and procedure same day", "severity": "Error"}
+  ],
+  "payer-005": [
+    {"rule_id": "HF-NCD-001", "cpt": "11402", "requires_dx_in": ["D23.9", "L21.9"], "description": "Skin excision requires specific dx", "severity": "Error"}
+  ],
+  "payer-006": [],
+  "payer-007": []
+}

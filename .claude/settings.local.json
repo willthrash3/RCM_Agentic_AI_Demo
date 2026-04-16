@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc --track-changes=all \"C:/Users/willt/Dropbox/1 Projects/Job Search/Envision/RCM_Agentic_AI_Demo_PRD_v1.0.docx\" -o PRD.md)",
+      "Bash(where pandoc:*)",
+      "Read(//c/Users/willt/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/6220ad5e-a456-485a-8e04-0582e3310ce2/db9fa265-73e0-4078-a57d-0ed0b65e99a9/skills/docx/scripts/office/**)",
+      "Bash(python \"C:/Users/willt/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/6220ad5e-a456-485a-8e04-0582e3310ce2/db9fa265-73e0-4078-a57d-0ed0b65e99a9/skills/docx/scripts/office/unpack.py\" \"C:/Users/willt/Dropbox/1 Projects/Job Search/Envision/RCM_Agentic_AI_Demo_PRD_v1.0.docx\" unpacked_prd/)",
+      "Bash(python -c ':*)",
+      "Bash(mkdir -p docs backend/app/agents backend/app/api backend/app/data/fixtures backend/app/models backend/app/orchestrator backend/app/tools backend/app/mock_payer backend/scripts backend/tests frontend/src/pages frontend/src/components frontend/src/hooks frontend/src/api frontend/public)",
+      "Bash(cp \"C:/Users/willt/Dropbox/1 Projects/Job Search/Envision/RCM_Agentic_AI_Demo_PRD_v1.0.docx\" docs/RCM_Agentic_AI_Demo_PRD_v1.0.docx)",
+      "Bash(cp PRD_extracted.txt docs/PRD.md)",
+      "Bash(rm PRD_extracted.txt)",
+      "Bash(rm -rf unpacked_prd)",
+      "Bash(gh auth:*)",
+      "Bash(git --version)",
+      "Bash(git config:*)",
+      "Bash(python -m py_compile backend/app/main.py backend/app/db_schema.py backend/app/database.py backend/app/config.py backend/app/agents/base.py backend/app/agents/coding.py backend/app/agents/scrubbing.py backend/app/agents/denial.py backend/app/agents/eligibility.py backend/app/agents/tracking.py backend/app/agents/analytics.py backend/app/agents/era_posting.py backend/app/agents/collections.py backend/app/agents/event_bus.py backend/app/agents/llm.py backend/app/agents/task_runner.py backend/app/tools/*.py backend/app/api/*.py backend/app/orchestrator/*.py backend/app/mock_payer/*.py backend/app/models/*.py backend/app/data/*.py backend/scripts/seed_all.py)",
+      "mcp__MCP_DOCKER__get_me"
+    ]
+  }
+}

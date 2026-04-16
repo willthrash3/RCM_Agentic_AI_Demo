@@ -1,0 +1,86 @@
+[
+  {
+    "payer_id": "payer-001",
+    "payer_name": "Medicare",
+    "payer_type": "Medicare",
+    "payer_id_x12": "MCR01",
+    "avg_days_to_pay": 18,
+    "denial_rate_baseline": 0.06,
+    "timely_filing_days": 365,
+    "fee_schedule_multiplier": 1.0,
+    "portal_mock_url": "/mock/payer/MCR01/eligibility",
+    "mix_weight": 0.28
+  },
+  {
+    "payer_id": "payer-002",
+    "payer_name": "TennCare Medicaid",
+    "payer_type": "Medicaid",
+    "payer_id_x12": "TNM02",
+    "avg_days_to_pay": 32,
+    "denial_rate_baseline": 0.11,
+    "timely_filing_days": 120,
+    "fee_schedule_multiplier": 0.78,
+    "portal_mock_url": "/mock/payer/TNM02/eligibility",
+    "mix_weight": 0.18
+  },
+  {
+    "payer_id": "payer-003",
+    "payer_name": "BlueStar Commercial",
+    "payer_type": "Commercial",
+    "payer_id_x12": "BSC03",
+    "avg_days_to_pay": 28,
+    "denial_rate_baseline": 0.09,
+    "timely_filing_days": 90,
+    "fee_schedule_multiplier": 1.18,
+    "portal_mock_url": "/mock/payer/BSC03/eligibility",
+    "mix_weight": 0.18
+  },
+  {
+    "payer_id": "payer-004",
+    "payer_name": "Apex PPO",
+    "payer_type": "Commercial",
+    "payer_id_x12": "APX04",
+    "avg_days_to_pay": 24,
+    "denial_rate_baseline": 0.10,
+    "timely_filing_days": 90,
+    "fee_schedule_multiplier": 1.22,
+    "portal_mock_url": "/mock/payer/APX04/eligibility",
+    "mix_weight": 0.14
+  },
+  {
+    "payer_id": "payer-005",
+    "payer_name": "HealthFirst HMO",
+    "payer_type": "Commercial",
+    "payer_id_x12": "HF005",
+    "avg_days_to_pay": 30,
+    "denial_rate_baseline": 0.12,
+    "timely_filing_days": 90,
+    "fee_schedule_multiplier": 1.08,
+    "portal_mock_url": "/mock/payer/HF005/eligibility",
+    "mix_weight": 0.08
+  },
+  {
+    "payer_id": "payer-006",
+    "payer_name": "SunBridge EPO",
+    "payer_type": "Commercial",
+    "payer_id_x12": "SBE06",
+    "avg_days_to_pay": 26,
+    "denial_rate_baseline": 0.08,
+    "timely_filing_days": 120,
+    "fee_schedule_multiplier": 1.15,
+    "portal_mock_url": "/mock/payer/SBE06/eligibility",
+    "mix_weight": 0.04
+  },
+  {
+    "payer_id": "payer-007",
+    "payer_name": "Self-Pay",
+    "payer_type": "Self-Pay",
+    "payer_id_x12": "SELF7",
+    "avg_days_to_pay": 45,
+    "denial_rate_baseline": 0.00,
+    "timely_filing_days": 365,
+    "fee_schedule_multiplier": 1.0,
+    "portal_mock_url": "/mock/payer/SELF7/eligibility",
+    "mix_weight": 0.10
+  }
+]

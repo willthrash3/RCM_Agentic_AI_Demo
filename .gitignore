@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+.turbo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test outputs
+coverage/
+.coverage
+htmlcov/
+
+# Frontend build
+frontend/dist/
+
+# Claude Code local config
+.claude/
+

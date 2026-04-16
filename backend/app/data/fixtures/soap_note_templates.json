@@ -1,0 +1,122 @@
+[
+  {
+    "scenario_id": "htn_mgmt",
+    "clinical_label": "Hypertension management",
+    "expected_cpt": "99214",
+    "expected_primary_icd10": "I10",
+    "additional_icd10": ["E78.5"],
+    "soap_note_text": "S: {patient_name} is a {age} y/o {gender} established patient with a history of essential hypertension, presenting for routine follow-up. BP logs at home averaging 142/88. Reports good adherence to lisinopril 20 mg daily; no side effects. Denies chest pain, SOB, headache, vision changes.\nO: VS: BP 146/90, HR 78, T 98.4F. Heart RRR, no murmurs. Lungs CTA bilaterally. No peripheral edema.\nA: 1) Essential HTN, not at goal; 2) Mixed hyperlipidemia, stable on statin.\nP: Increase lisinopril to 40 mg daily. Continue atorvastatin 20 mg. Low-sodium diet counseling. Recheck BP in 4 weeks. Labs (CMP, lipid panel) prior to next visit. 35 min face-to-face; moderate MDM."
+  },
+  {
+    "scenario_id": "dm2_fu",
+    "clinical_label": "Type 2 diabetes follow-up",
+    "expected_cpt": "99214",
+    "expected_primary_icd10": "E11.65",
+    "additional_icd10": ["E11.40"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with T2DM presents for 3-month follow-up. Reports fasting BG averaging 180-210. Intermittent burning in bilateral feet for 2 months. Adherent to metformin 1000 mg BID; tolerating.\nO: BMI 33. Feet: decreased monofilament sensation in distal toes bilaterally. HbA1c today: 9.1% (up from 8.3).\nA: 1) T2DM with hyperglycemia, uncontrolled; 2) Diabetic peripheral neuropathy.\nP: Add semaglutide 0.25 mg weekly. Gabapentin 300 mg qhs for neuropathy. Nutrition referral. Home BG log. Recheck A1c in 3 months. 35 min face-to-face; moderate MDM."
+  },
+  {
+    "scenario_id": "copd_exac",
+    "clinical_label": "COPD exacerbation",
+    "expected_cpt": "99284",
+    "expected_primary_icd10": "J44.1",
+    "additional_icd10": ["R05.9"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with severe COPD presents to ED with 3 days worsening SOB, productive yellow sputum, wheezing. Home O2 2L baseline; increased use. No fever.\nO: VS: T 99.2, BP 132/82, HR 98, SpO2 88% RA. Mild respiratory distress. Lungs with diffuse wheezing, prolonged expiration. CXR: hyperinflation, no infiltrate.\nA: COPD acute exacerbation, likely viral trigger.\nP: Albuterol/ipratropium neb x3. IV methylprednisolone 125 mg. Azithromycin. Admit to observation; high-complexity ED MDM."
+  },
+  {
+    "scenario_id": "cp_acs_ro",
+    "clinical_label": "Chest pain rule-out ACS",
+    "expected_cpt": "99285",
+    "expected_primary_icd10": "R07.9",
+    "additional_icd10": ["I25.10"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} presents to ED with substernal chest pressure x 45 min radiating to L arm, diaphoresis, nausea. History of CAD s/p stent 2019.\nO: VS: BP 158/94, HR 102, SpO2 97%. Diaphoretic, anxious. Heart RRR. Lungs clear. ECG: no acute ST changes, old T-wave inversions. Troponin pending.\nA: Chest pain, rule out ACS; known CAD.\nP: ASA 324 mg chewed, NTG SL, IV access, cardiac monitor. Serial troponins q3h. Cardiology consult. High-complexity ED MDM."
+  },
+  {
+    "scenario_id": "oa_knee_inj",
+    "clinical_label": "Knee osteoarthritis injection",
+    "expected_cpt": "20610",
+    "expected_primary_icd10": "M17.11",
+    "additional_icd10": ["M25.561"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with R knee OA presents for therapeutic joint injection. Failed conservative mgmt (PT, NSAIDs, activity mod). Pain 7/10, limits ambulation.\nO: R knee: effusion, crepitus with ROM, TTP medial joint line. No erythema/warmth. Neurovascularly intact distally.\nA: Primary OA of right knee, moderate to severe; persistent pain despite conservative therapy.\nP: After consent and sterile prep, 40 mg triamcinolone + 5 mL 1% lidocaine injected into R knee joint via lateral approach. Post-procedure: no complications. Ice, activity as tolerated. Orthopedics f/u in 6 weeks."
+  },
+  {
+    "scenario_id": "uri",
+    "clinical_label": "Upper respiratory infection",
+    "expected_cpt": "99213",
+    "expected_primary_icd10": "J06.9",
+    "additional_icd10": ["R05.9"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} presents with 4 days sore throat, nasal congestion, low-grade fevers (max 100.2), dry cough. No SOB, no chest pain. No sick contacts at work.\nO: VS: T 99.6, HR 82, BP 124/78, SpO2 99%. Oropharynx erythematous, no exudate. Tender anterior cervical nodes. Lungs clear.\nA: Acute URI, viral etiology most likely.\nP: Supportive care: fluids, rest, OTC decongestants, acetaminophen prn. Return if fever >101.5 x 3 days, SOB, or worsening. Work excuse provided. 20 min face-to-face; low MDM."
+  },
+  {
+    "scenario_id": "back_pain",
+    "clinical_label": "Low back pain",
+    "expected_cpt": "99213",
+    "expected_primary_icd10": "M54.5",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} presents with 1 week of non-radiating lumbar pain after lifting a heavy box. Denies saddle anesthesia, bowel/bladder changes, leg weakness.\nO: Lumbar paraspinal spasm, limited flexion. SLR negative bilaterally. DTRs 2+ symmetric. Strength 5/5 LE.\nA: Acute mechanical low back pain.\nP: NSAIDs scheduled, muscle relaxant prn, heat, light activity, home exercises. Avoid heavy lifting x 2 weeks. Return if red flags."
+  },
+  {
+    "scenario_id": "anx_dep_fu",
+    "clinical_label": "Anxiety/depression follow-up",
+    "expected_cpt": "99214",
+    "expected_primary_icd10": "F32.9",
+    "additional_icd10": ["F41.1"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with MDD/GAD returns for medication check. On sertraline 100 mg daily x 8 weeks. PHQ-9 today: 9 (down from 16). GAD-7: 7 (down from 13). Sleep improved. No SI/HI.\nO: A&O, mood improved, affect congruent. No psychomotor changes.\nA: MDD — improving on SSRI; GAD — improving.\nP: Continue sertraline 100 mg. Continue weekly CBT. PHQ-9/GAD-7 at next visit. 35 min face-to-face; moderate MDM including medication management."
+  },
+  {
+    "scenario_id": "hyperlipidemia",
+    "clinical_label": "Hyperlipidemia management",
+    "expected_cpt": "99213",
+    "expected_primary_icd10": "E78.5",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} returns for lipid management. Fasting lipids: TC 245, LDL 168, HDL 42, TG 210. Currently on atorvastatin 20 mg. Tolerating. No muscle aches.\nO: BP 128/82, BMI 29. No xanthomas.\nA: Mixed hyperlipidemia, sub-optimally controlled.\nP: Increase atorvastatin to 40 mg daily. Mediterranean diet, 150 min/week aerobic exercise. Recheck lipids in 3 months. 20 min; low MDM."
+  },
+  {
+    "scenario_id": "post_op_wound",
+    "clinical_label": "Post-op wound check",
+    "expected_cpt": "99212",
+    "expected_primary_icd10": "Z01.818",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} s/p R inguinal hernia repair 10 days ago. No pain, no drainage, tolerating regular diet. No fever.\nO: Incision well-approximated, no erythema, swelling, or drainage. Steri-strips intact.\nA: Post-op day 10, uncomplicated hernia repair.\nP: May resume light activity. No lifting >10 lbs x 2 more weeks. Return if fever, drainage, or worsening pain. 15 min."
+  },
+  {
+    "scenario_id": "skin_lesion",
+    "clinical_label": "Skin lesion excision",
+    "expected_cpt": "11402",
+    "expected_primary_icd10": "D23.9",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with 1.5 cm nevus on R shoulder, enlarging, occasional itching. No bleeding.\nO: 1.5 cm pigmented, symmetric lesion, regular borders, uniform color. No concerning features on dermatoscopy.\nA: Benign nevus, for excisional biopsy per patient preference and gradual enlargement.\nP: After consent, sterile prep, 1% lidocaine w/ epi. Elliptical excision of 1.5 cm lesion with 2 mm margins. Closed in two layers with 4-0 vicryl and 5-0 prolene. Specimen to pathology. Wound care instructions given."
+  },
+  {
+    "scenario_id": "uti",
+    "clinical_label": "Urinary tract infection",
+    "expected_cpt": "99213",
+    "expected_primary_icd10": "N39.0",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} presents with 2 days dysuria, frequency, urgency. No fever, no flank pain, no vaginal discharge. No prior UTIs this year.\nO: VS normal. Abdomen soft, no CVA tenderness. UA: 3+ leuks, 2+ nitrites, +blood.\nA: Uncomplicated UTI.\nP: Nitrofurantoin 100 mg BID x 5 days. Increase fluids. Return if fever, flank pain, or not improved in 48 hrs. 20 min; low MDM."
+  },
+  {
+    "scenario_id": "new_patient_comp",
+    "clinical_label": "New patient comprehensive exam",
+    "expected_cpt": "99204",
+    "expected_primary_icd10": "Z00.00",
+    "additional_icd10": ["I10", "E78.5"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} establishing care. PMH: HTN, hyperlipidemia. No acute complaints. Meds: lisinopril 10 mg, atorvastatin 20 mg. FH: HTN, MI. SH: non-smoker, 2 drinks/week.\nO: Full exam unremarkable. VS: BP 138/86, HR 72, BMI 28.\nA: 1) Establish care; 2) HTN at-goal borderline; 3) Hyperlipidemia on statin; 4) Health maintenance due.\nP: Labs: CMP, lipid panel, HbA1c, TSH. Update immunizations. Colon ca screening. 50 min face-to-face; moderate-high MDM."
+  },
+  {
+    "scenario_id": "awv",
+    "clinical_label": "Annual wellness visit (Medicare)",
+    "expected_cpt": "G0439",
+    "expected_primary_icd10": "Z00.00",
+    "additional_icd10": [],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} for Medicare AWV. Completed HRA. No new concerns. Medications reviewed.\nO: VS stable. Completed: functional assessment, fall risk, cognitive screen (Mini-Cog 5/5), depression screen (PHQ-2 negative).\nA: AWV completed; personalized prevention plan provided.\nP: Written prevention plan given. Schedule: colonoscopy, mammogram if due. Pneumococcal vaccine today. Return in 12 months for next AWV."
+  },
+  {
+    "scenario_id": "ed_cp_workup",
+    "clinical_label": "ED chest pain workup",
+    "expected_cpt": "99285",
+    "expected_primary_icd10": "R07.9",
+    "additional_icd10": ["I10"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} to ED with 2 hours substernal chest pain, pressure-like, 6/10, worse with exertion, not relieved by rest. H/o HTN. No prior CAD.\nO: VS: BP 172/98, HR 94, SpO2 98%. Anxious-appearing. Heart RRR, no murmurs. Lungs clear. ECG: NSR, no acute ischemic changes. Initial troponin negative.\nA: Chest pain, rule out ACS; hypertensive urgency.\nP: ASA 324, NTG SL. Serial troponins x3. Cardiac monitor. Labetalol IV for BP. Cardiology consult. High-complexity ED MDM."
+  }
+]

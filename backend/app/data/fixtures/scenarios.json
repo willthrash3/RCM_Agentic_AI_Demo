@@ -1,0 +1,78 @@
+[
+  {
+    "scenario_id": "payer_rule_change",
+    "name": "Payer Rule Change",
+    "description": "BlueStar adds new LCD restriction on CPT 99214. Scrubbing agent flags 47 affected claims; coding agent re-reviews.",
+    "inject": {
+      "type": "add_edit_rule",
+      "payer_id": "payer-003",
+      "rule": {
+        "rule_id": "BSC-LCD-NEW",
+        "cpt": "99214",
+        "requires_dx_in": ["I10", "E11.9", "E11.65"],
+        "description": "New LCD: 99214 restricted to HTN/DM dx only",
+        "severity": "Critical"
+      }
+    },
+    "expected_outcome": "scrubbing_agent flags ~47 claims; analytics agent raises rule-change alert"
+  },
+  {
+    "scenario_id": "denial_spike",
+    "name": "Denial Spike",
+    "description": "18% of Medicare claims denied CO-50 on same day. Analytics agent alerts; denial agent batch-classifies and drafts appeals.",
+    "inject": {
+      "type": "bulk_deny",
+      "payer_id": "payer-001",
+      "carc_code": "CO-50",
+      "rarc_code": "N115",
+      "fraction": 0.18,
+      "denial_category": "Med Necessity"
+    },
+    "expected_outcome": "denial_rate_alert KPI fires; denial_agent processes batch"
+  },
+  {
+    "scenario_id": "charge_lag_alert",
+    "name": "Charge Lag Alert",
+    "description": "Charge lag spikes to 5.2 days for orthopedics. Analytics agent alerts; dashboard shows trend; HITL task created.",
+    "inject": {
+      "type": "charge_lag_spike",
+      "service_line": "orthopedics",
+      "avg_lag_days": 5.2
+    },
+    "expected_outcome": "charge_lag KPI threshold breach; HITL task created"
+  },
+  {
+    "scenario_id": "eligibility_gap",
+    "name": "Eligibility Gap",
+    "description": "12 patients coverage lapsed before scheduled service. Eligibility agent flags; HITL queue shows 12 tasks; financial counseling offered.",
+    "inject": {
+      "type": "lapse_coverage",
+      "patient_count": 12
+    },
+    "expected_outcome": "12 eligibility.escalated events; 12 HITL tasks of priority High"
+  },
+  {
+    "scenario_id": "underpayment_pattern",
+    "name": "Underpayment Pattern",
+    "description": "Apex PPO underpaying 99215 by 12% for 30 days. Tracking agent flags variance; analytics agent surfaces systemic pattern.",
+    "inject": {
+      "type": "underpayment",
+      "payer_id": "payer-004",
+      "cpt_code": "99215",
+      "variance_pct": 0.12,
+      "days_back": 30
+    },
+    "expected_outcome": "tracking_agent flags ~20 claims; analytics alert fires"
+  },
+  {
+    "scenario_id": "high_value_overturn",
+    "name": "High-Value Denial Overturn",
+    "description": "$28,400 inpatient claim denied CO-4. Coding agent fixes; appeal auto-submitted in under 90 seconds.",
+    "inject": {
+      "type": "high_value_denial",
+      "carc_code": "CO-4",
+      "amount": 28400.00
+    },
+    "expected_outcome": "denial_agent classifies -> coding_agent corrects -> appeal submitted"
+  }
+]

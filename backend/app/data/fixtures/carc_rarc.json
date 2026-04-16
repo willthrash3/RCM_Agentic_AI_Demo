@@ -1,0 +1,25 @@
+{
+  "carc": [
+    {"code": "CO-4", "description": "The service code is inconsistent with the modifier used", "category": "Coding / DX"},
+    {"code": "CO-11", "description": "Diagnosis inconsistent with procedure", "category": "Coding / DX"},
+    {"code": "CO-15", "description": "Payment adjusted because authorization/precertification was absent", "category": "Prior Auth"},
+    {"code": "CO-16", "description": "Claim/service lacks information which is needed for adjudication", "category": "Coding / DX"},
+    {"code": "CO-18", "description": "Duplicate claim", "category": "Duplicate"},
+    {"code": "CO-27", "description": "Expenses incurred after coverage terminated", "category": "Eligibility"},
+    {"code": "CO-29", "description": "Time limit for filing has expired", "category": "Timely Filing"},
+    {"code": "CO-31", "description": "Patient cannot be identified as our insured", "category": "Eligibility"},
+    {"code": "CO-45", "description": "Charge exceeds fee schedule / maximum allowable amount", "category": "Contractual"},
+    {"code": "CO-50", "description": "Non-covered service (lack of medical necessity)", "category": "Med Necessity"},
+    {"code": "CO-167", "description": "Service not medically necessary", "category": "Med Necessity"},
+    {"code": "CO-197", "description": "Precertification/authorization/notification absent", "category": "Prior Auth"},
+    {"code": "CO-253", "description": "Sequestration — reduction in federal payment", "category": "Contractual"}
+  ],
+  "rarc": [
+    {"code": "N4", "description": "Missing/incomplete/invalid prior authorization number"},
+    {"code": "N30", "description": "Patient ineligible for this service"},
+    {"code": "N115", "description": "Decision based on LCD"},
+    {"code": "N286", "description": "Missing/incomplete/invalid referring provider primary identifier"},
+    {"code": "M86", "description": "Service denied because payment already made for similar procedure within set timeframe"},
+    {"code": "MA04", "description": "Secondary payment cannot be considered without primary EOB"}
+  ]
+}
