@@ -12,21 +12,21 @@ from jinja2 import Template
 
 from app.config import get_settings
 from app.data.fixtures_loader import appeal_templates, carc_rarc, payers
-from app.database import get_connection, transaction
+from app.database import locked, transaction
 
 
 _CARC_LOOKUP = {c["code"]: c for c in carc_rarc()["carc"]}
 
 
 def get_denial_detail(denial_id: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT denial_id, claim_id, carc_code, rarc_code, denial_category,
-                  denial_date, appeal_deadline, agent_root_cause,
-                  appeal_letter_text, appeal_submitted_at, overturn_flag
-             FROM denials WHERE denial_id = ?""",
-        (denial_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT denial_id, claim_id, carc_code, rarc_code, denial_category,
+                      denial_date, appeal_deadline, agent_root_cause,
+                      appeal_letter_text, appeal_submitted_at, overturn_flag
+                 FROM denials WHERE denial_id = ?""",
+            (denial_id,),
+        ).fetchone()
     if not row:
         return {}
     cols = ["denial_id", "claim_id", "carc_code", "rarc_code", "denial_category",
@@ -123,16 +123,16 @@ def render_appeal_letter(
 
 
 async def submit_appeal(denial_id: str, appeal_letter_text: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        "SELECT claim_id FROM denials WHERE denial_id = ?", (denial_id,)
-    ).fetchone()
-    if not row:
-        return {"success": False, "reason": "denial not found"}
-    claim_id = row[0]
-    payer_row = conn.execute(
-        "SELECT payer_id FROM claims WHERE claim_id = ?", (claim_id,)
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            "SELECT claim_id FROM denials WHERE denial_id = ?", (denial_id,)
+        ).fetchone()
+        if not row:
+            return {"success": False, "reason": "denial not found"}
+        claim_id = row[0]
+        payer_row = conn.execute(
+            "SELECT payer_id FROM claims WHERE claim_id = ?", (claim_id,)
+        ).fetchone()
     if not payer_row:
         return {"success": False, "reason": "claim not found"}
     payer = next((p for p in payers() if p["payer_id"] == payer_row[0]), None)

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import agents, claims, denials, events, hitl, kpis, patients
 from app.api import scenarios as scenarios_api
 from app.config import get_settings
-from app.database import get_connection, close_connection
+from app.database import close_connection, locked
 from app.db_schema import init_schema
 from app.mock_payer.router import router as mock_payer_router
 
@@ -39,8 +39,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def _startup() -> None:
-    conn = get_connection()
-    init_schema(conn)
+    with locked() as conn:
+        init_schema(conn)
     logger.info("DuckDB initialized at %s", settings.db_path)
 
 

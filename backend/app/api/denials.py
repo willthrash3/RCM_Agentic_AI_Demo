@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import require_api_key
 from app.data.fixtures_loader import carc_rarc
-from app.database import get_connection
+from app.database import locked
 
 router = APIRouter(prefix="/denials", tags=["denials"], dependencies=[Depends(require_api_key)])
 
@@ -20,7 +20,6 @@ def list_denials(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=200),
 ) -> dict:
-    conn = get_connection()
     offset = (page - 1) * page_size
     where = ["1=1"]
     args: list = []
@@ -29,20 +28,21 @@ def list_denials(
     if payer_id:
         where.append("c.payer_id = ?"); args.append(payer_id)
     clause = " AND ".join(where)
-    total = conn.execute(
-        f"""SELECT COUNT(*) FROM denials d JOIN claims c ON d.claim_id = c.claim_id WHERE {clause}""",
-        args,
-    ).fetchone()[0]
-    rows = conn.execute(
-        f"""SELECT d.denial_id, d.claim_id, d.carc_code, d.rarc_code, d.denial_category,
-                   d.denial_date, d.appeal_deadline, d.overturn_flag,
-                   d.appeal_submitted_at, c.payer_id, c.total_billed
-              FROM denials d JOIN claims c ON d.claim_id = c.claim_id
-             WHERE {clause}
-             ORDER BY d.denial_date DESC
-             LIMIT ? OFFSET ?""",
-        args + [page_size, offset],
-    ).fetchall()
+    with locked() as conn:
+        total = conn.execute(
+            f"""SELECT COUNT(*) FROM denials d JOIN claims c ON d.claim_id = c.claim_id WHERE {clause}""",
+            args,
+        ).fetchone()[0]
+        rows = conn.execute(
+            f"""SELECT d.denial_id, d.claim_id, d.carc_code, d.rarc_code, d.denial_category,
+                       d.denial_date, d.appeal_deadline, d.overturn_flag,
+                       d.appeal_submitted_at, c.payer_id, c.total_billed
+                  FROM denials d JOIN claims c ON d.claim_id = c.claim_id
+                 WHERE {clause}
+                 ORDER BY d.denial_date DESC
+                 LIMIT ? OFFSET ?""",
+            args + [page_size, offset],
+        ).fetchall()
     cols = ["denial_id", "claim_id", "carc_code", "rarc_code", "denial_category",
             "denial_date", "appeal_deadline", "overturn_flag", "appeal_submitted_at",
             "payer_id", "total_billed"]
@@ -56,22 +56,22 @@ def list_denials(
 
 @router.get("/summary")
 def denial_summary() -> dict:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT denial_category, COUNT(*) FROM denials GROUP BY denial_category"""
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT denial_category, COUNT(*) FROM denials GROUP BY denial_category"""
+        ).fetchall()
     return {"by_category": [{"category": r[0], "count": r[1]} for r in rows]}
 
 
 @router.get("/{denial_id}")
 def get_denial(denial_id: str) -> dict:
-    conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM denials WHERE denial_id = ?", (denial_id,)
-    ).fetchone()
-    if not row:
-        raise HTTPException(404, "Denial not found")
-    cols = [d[0] for d in conn.description]
-    out = dict(zip(cols, row))
+    with locked() as conn:
+        row = conn.execute(
+            "SELECT * FROM denials WHERE denial_id = ?", (denial_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Denial not found")
+        cols = [d[0] for d in conn.description]
+        out = dict(zip(cols, row))
     out["carc_description"] = _CARC.get(out["carc_code"], {}).get("description", "")
     return out

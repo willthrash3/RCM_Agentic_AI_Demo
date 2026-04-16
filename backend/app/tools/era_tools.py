@@ -7,19 +7,19 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from app.database import get_connection, transaction
+from app.database import locked, transaction
 
 
 def get_unposted_eras(limit: int = 25) -> list[dict[str, Any]]:
     """Return pseudo-ERA batches derived from claims marked Paid but not era_posted."""
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT claim_id, payer_id, total_paid, total_allowed, patient_responsibility
-             FROM claims
-            WHERE claim_status = 'Paid' AND era_posted = FALSE
-            LIMIT ?""",
-        (limit,),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT claim_id, payer_id, total_paid, total_allowed, patient_responsibility
+                 FROM claims
+                WHERE claim_status = 'Paid' AND era_posted = FALSE
+                LIMIT ?""",
+            (limit,),
+        ).fetchall()
     # Group into fake ERAs of 4 lines each
     eras: list[dict[str, Any]] = []
     for i in range(0, len(rows), 4):
@@ -38,16 +38,16 @@ def get_unposted_eras(limit: int = 25) -> list[dict[str, Any]]:
 
 
 def get_claim_by_service_info(patient_id: str, service_date: date, cpt_code: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT c.claim_id, c.encounter_id, c.total_billed
-             FROM claims c
-             JOIN encounters e ON c.encounter_id = e.encounter_id
-             JOIN claim_lines l ON l.claim_id = c.claim_id
-            WHERE e.patient_id = ? AND e.service_date = ? AND l.cpt_code = ?
-            LIMIT 1""",
-        (patient_id, service_date, cpt_code),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT c.claim_id, c.encounter_id, c.total_billed
+                 FROM claims c
+                 JOIN encounters e ON c.encounter_id = e.encounter_id
+                 JOIN claim_lines l ON l.claim_id = c.claim_id
+                WHERE e.patient_id = ? AND e.service_date = ? AND l.cpt_code = ?
+                LIMIT 1""",
+            (patient_id, service_date, cpt_code),
+        ).fetchone()
     if not row:
         return {}
     return {"claim_id": row[0], "encounter_id": row[1], "total_billed": row[2]}

@@ -10,35 +10,35 @@ import httpx
 
 from app.config import get_settings
 from app.data.fixtures_loader import cpt_codes, payer_edit_rules, payers
-from app.database import get_connection, transaction
+from app.database import locked, transaction
 
 
 def get_claim_with_lines(claim_id: str) -> dict[str, Any]:
-    conn = get_connection()
-    claim_row = conn.execute(
-        """SELECT claim_id, encounter_id, claim_type, payer_id, total_billed,
-                  total_allowed, total_paid, patient_responsibility, submission_date,
-                  adjudication_date, claim_status, rejection_reason,
-                  timely_filing_deadline, scrub_score, era_posted
-             FROM claims WHERE claim_id = ?""",
-        (claim_id,),
-    ).fetchone()
-    if not claim_row:
-        return {}
-    cols = ["claim_id", "encounter_id", "claim_type", "payer_id", "total_billed",
-            "total_allowed", "total_paid", "patient_responsibility", "submission_date",
-            "adjudication_date", "claim_status", "rejection_reason",
-            "timely_filing_deadline", "scrub_score", "era_posted"]
-    claim = dict(zip(cols, claim_row))
-    lines = conn.execute(
-        """SELECT line_id, cpt_code, icd10_primary, icd10_secondary, modifier,
-                  units, charge_amount, allowed_amount, coding_confidence
-             FROM claim_lines WHERE claim_id = ?""",
-        (claim_id,),
-    ).fetchall()
-    lcols = ["line_id", "cpt_code", "icd10_primary", "icd10_secondary", "modifier",
-             "units", "charge_amount", "allowed_amount", "coding_confidence"]
-    claim["lines"] = [dict(zip(lcols, r)) for r in lines]
+    with locked() as conn:
+        claim_row = conn.execute(
+            """SELECT claim_id, encounter_id, claim_type, payer_id, total_billed,
+                      total_allowed, total_paid, patient_responsibility, submission_date,
+                      adjudication_date, claim_status, rejection_reason,
+                      timely_filing_deadline, scrub_score, era_posted
+                 FROM claims WHERE claim_id = ?""",
+            (claim_id,),
+        ).fetchone()
+        if not claim_row:
+            return {}
+        cols = ["claim_id", "encounter_id", "claim_type", "payer_id", "total_billed",
+                "total_allowed", "total_paid", "patient_responsibility", "submission_date",
+                "adjudication_date", "claim_status", "rejection_reason",
+                "timely_filing_deadline", "scrub_score", "era_posted"]
+        claim = dict(zip(cols, claim_row))
+        lines = conn.execute(
+            """SELECT line_id, cpt_code, icd10_primary, icd10_secondary, modifier,
+                      units, charge_amount, allowed_amount, coding_confidence
+                 FROM claim_lines WHERE claim_id = ?""",
+            (claim_id,),
+        ).fetchall()
+        lcols = ["line_id", "cpt_code", "icd10_primary", "icd10_secondary", "modifier",
+                 "units", "charge_amount", "allowed_amount", "coding_confidence"]
+        claim["lines"] = [dict(zip(lcols, r)) for r in lines]
     return claim
 
 
@@ -70,12 +70,12 @@ def check_bundling_rules(cpt_list: list[str]) -> list[dict[str, Any]]:
 
 
 def get_prior_auth_status(encounter_id: str, cpt_code: str | None = None) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT auth_id, cpt_code, status, auth_number, decision_at
-             FROM prior_auths WHERE encounter_id = ? LIMIT 1""",
-        (encounter_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT auth_id, cpt_code, status, auth_number, decision_at
+                 FROM prior_auths WHERE encounter_id = ? LIMIT 1""",
+            (encounter_id,),
+        ).fetchone()
     if not row:
         return {"status": "Not Found", "encounter_id": encounter_id}
     return {
@@ -116,14 +116,14 @@ def write_scrub_result(claim_id: str, score: float, edits: list[dict], release_f
 
 
 def get_submitted_claims(days_submitted_min: int = 1) -> list[dict[str, Any]]:
-    conn = get_connection()
     threshold = date.today() - timedelta(days=days_submitted_min)
-    rows = conn.execute(
-        """SELECT claim_id, payer_id, submission_date, total_billed, claim_status
-             FROM claims
-            WHERE claim_status = 'Submitted' AND submission_date <= ?""",
-        (threshold,),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT claim_id, payer_id, submission_date, total_billed, claim_status
+                 FROM claims
+                WHERE claim_status = 'Submitted' AND submission_date <= ?""",
+            (threshold,),
+        ).fetchall()
     return [
         {"claim_id": r[0], "payer_id": r[1], "submission_date": r[2],
          "total_billed": r[3], "claim_status": r[4]}

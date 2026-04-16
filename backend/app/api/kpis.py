@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.agents.analytics import AnalyticsAgent, KPI_CONFIG
 from app.api.deps import require_api_key
-from app.database import get_connection
+from app.database import locked
 from app.tools.analytics_tools import (
     compute_cash_forecast,
     get_ar_aging_snapshot,
@@ -30,12 +30,12 @@ def dashboard(as_of_date: date | None = None) -> dict:
             "target": cfg["target"], "alert_threshold": cfg["alert"],
             "status": status, "direction_good": cfg["direction"], "unit": cfg["unit"],
         })
-    conn = get_connection()
-    ticker = conn.execute(
-        """SELECT agent_name, action_type, entity_type, entity_id, created_at
-             FROM agent_event_log
-            ORDER BY created_at DESC LIMIT 20"""
-    ).fetchall()
+    with locked() as conn:
+        ticker = conn.execute(
+            """SELECT agent_name, action_type, entity_type, entity_id, created_at
+                 FROM agent_event_log
+                ORDER BY created_at DESC LIMIT 20"""
+        ).fetchall()
     tcols = ["agent_name", "action_type", "entity_type", "entity_id", "created_at"]
     return {
         "as_of": datetime.utcnow().isoformat() + "Z",
@@ -69,13 +69,13 @@ def cash_forecast(days_horizon: int = 90) -> dict:
 
 @router.get("/alerts")
 def alerts(limit: int = 25) -> list[dict]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT alert_id, alert_type, severity, description, affected_entities,
-                  created_at, resolved_at
-             FROM kpi_alerts ORDER BY created_at DESC LIMIT ?""",
-        (limit,),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT alert_id, alert_type, severity, description, affected_entities,
+                      created_at, resolved_at
+                 FROM kpi_alerts ORDER BY created_at DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
     cols = ["alert_id", "alert_type", "severity", "description", "affected_entities",
             "created_at", "resolved_at"]
     return [dict(zip(cols, r)) for r in rows]

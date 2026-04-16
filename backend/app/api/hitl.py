@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.agents.event_bus import emit
 from app.api.deps import require_api_key
-from app.database import get_connection, transaction
+from app.database import locked, transaction
 from app.models.agent import HITLResolution
 
 router = APIRouter(prefix="/hitl", tags=["hitl"], dependencies=[Depends(require_api_key)])
@@ -15,20 +15,20 @@ router = APIRouter(prefix="/hitl", tags=["hitl"], dependencies=[Depends(require_
 
 @router.get("/queue")
 def list_queue(status: str = "pending", limit: int = 50) -> list[dict]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT task_id, agent_name, entity_type, entity_id, task_description,
-                  priority, recommended_action, agent_reasoning, status, created_at
-             FROM hitl_tasks
-            WHERE status = ?
-            ORDER BY
-              CASE priority
-                WHEN 'Critical' THEN 1 WHEN 'High' THEN 2
-                WHEN 'Medium' THEN 3 ELSE 4 END,
-              created_at DESC
-            LIMIT ?""",
-        (status, limit),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT task_id, agent_name, entity_type, entity_id, task_description,
+                      priority, recommended_action, agent_reasoning, status, created_at
+                 FROM hitl_tasks
+                WHERE status = ?
+                ORDER BY
+                  CASE priority
+                    WHEN 'Critical' THEN 1 WHEN 'High' THEN 2
+                    WHEN 'Medium' THEN 3 ELSE 4 END,
+                  created_at DESC
+                LIMIT ?""",
+            (status, limit),
+        ).fetchall()
     cols = ["task_id", "agent_name", "entity_type", "entity_id", "task_description",
             "priority", "recommended_action", "agent_reasoning", "status", "created_at"]
     return [dict(zip(cols, r)) for r in rows]
@@ -36,11 +36,11 @@ def list_queue(status: str = "pending", limit: int = 50) -> list[dict]:
 
 @router.post("/{task_id}/resolve")
 async def resolve_task(task_id: str, resolution: HITLResolution) -> dict:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT agent_name, entity_type, entity_id FROM hitl_tasks WHERE task_id = ?""",
-        (task_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT agent_name, entity_type, entity_id FROM hitl_tasks WHERE task_id = ?""",
+            (task_id,),
+        ).fetchone()
     if not row:
         raise HTTPException(404, "Task not found")
     status = {"approve": "approved", "reject": "rejected", "modify": "modified"}[resolution.decision]

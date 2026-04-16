@@ -31,6 +31,17 @@ def get_connection() -> duckdb.DuckDBPyConnection:
 
 
 @contextmanager
+def locked() -> Iterator[duckdb.DuckDBPyConnection]:
+    """Acquire the shared connection lock for the duration of a query block.
+
+    Use this whenever executing queries outside of a transaction, so that
+    concurrent requests don't cancel each other on the shared DuckDB connection.
+    """
+    with _lock:
+        yield get_connection()
+
+
+@contextmanager
 def transaction() -> Iterator[duckdb.DuckDBPyConnection]:
     """Context manager that acquires the shared connection lock.
 

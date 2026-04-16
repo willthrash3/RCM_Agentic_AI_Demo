@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
+const backendTarget = process.env.BACKEND_URL ?? 'http://localhost:8000';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -11,8 +13,8 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      '/api': { target: 'http://localhost:8000', changeOrigin: true },
-      '/mock': { target: 'http://localhost:8000', changeOrigin: true },
+      '/api': { target: backendTarget, changeOrigin: true },
+      '/mock': { target: backendTarget, changeOrigin: true },
     },
   },
   test: {

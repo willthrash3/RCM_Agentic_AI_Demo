@@ -5,18 +5,18 @@ from __future__ import annotations
 from typing import Any
 
 from app.data.fixtures_loader import cpt_codes, icd10_codes, soap_templates
-from app.database import get_connection, transaction
+from app.database import locked, transaction
 
 
 def get_encounter_note(encounter_id: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT encounter_id, patient_id, service_date, encounter_type,
-                  place_of_service, chief_complaint, soap_note_text, scenario_id,
-                  attending_physician
-             FROM encounters WHERE encounter_id = ?""",
-        (encounter_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT encounter_id, patient_id, service_date, encounter_type,
+                      place_of_service, chief_complaint, soap_note_text, scenario_id,
+                      attending_physician
+                 FROM encounters WHERE encounter_id = ?""",
+            (encounter_id,),
+        ).fetchone()
     if not row:
         return {}
     cols = ["encounter_id", "patient_id", "service_date", "encounter_type",
@@ -26,13 +26,13 @@ def get_encounter_note(encounter_id: str) -> dict[str, Any]:
 
 
 def get_patient_history(patient_id: str, limit: int = 5) -> list[dict[str, Any]]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT encounter_id, service_date, chief_complaint, status
-             FROM encounters WHERE patient_id = ?
-             ORDER BY service_date DESC LIMIT ?""",
-        (patient_id, limit),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT encounter_id, service_date, chief_complaint, status
+                 FROM encounters WHERE patient_id = ?
+                 ORDER BY service_date DESC LIMIT ?""",
+            (patient_id, limit),
+        ).fetchall()
     return [
         {"encounter_id": r[0], "service_date": r[1], "chief_complaint": r[2], "status": r[3]}
         for r in rows
@@ -92,10 +92,10 @@ def write_coding_suggestion(encounter_id: str, codes: dict, confidence: float, r
     For the demo we update the single claim_line for this encounter's claim with
     the suggested primary CPT + ICD and confidence score.
     """
-    conn = get_connection()
-    claim = conn.execute(
-        "SELECT claim_id FROM claims WHERE encounter_id = ? LIMIT 1", (encounter_id,)
-    ).fetchone()
+    with locked() as conn:
+        claim = conn.execute(
+            "SELECT claim_id FROM claims WHERE encounter_id = ? LIMIT 1", (encounter_id,)
+        ).fetchone()
     if not claim:
         return
     claim_id = claim[0]

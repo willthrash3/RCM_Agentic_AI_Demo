@@ -14,7 +14,7 @@ from decimal import Decimal
 
 from app.agents.base import BaseAgent
 from app.agents.event_bus import emit
-from app.database import get_connection
+from app.database import locked
 from app.models.agent import AgentInput, AgentOutput
 from app.tools.analytics_tools import (
     compute_cash_forecast,
@@ -54,59 +54,59 @@ class AnalyticsAgent(BaseAgent):
     name = "analytics_agent"
 
     def _current_value(self, metric: str) -> float:
-        conn = get_connection()
-        if metric == "days_in_ar":
-            row = conn.execute(
-                """SELECT SUM(total_ar * days_in_ar) / NULLIF(SUM(total_ar), 0)
-                     FROM ar_aging_snapshot
-                    WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM ar_aging_snapshot)"""
-            ).fetchone()
-            return float(row[0]) if row and row[0] else 0.0
         if metric == "first_pass_rate":
             return get_first_pass_rate(30)
-        if metric == "denial_rate":
-            row = conn.execute(
-                """SELECT COUNT(*) FILTER (WHERE claim_status = 'Denied')::DOUBLE /
-                          NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied','Appealed')), 0)
-                     FROM claims WHERE submission_date >= ?""",
-                (date.today() - timedelta(days=30),),
-            ).fetchone()
-            return float(row[0]) if row and row[0] else 0.0
-        if metric == "net_collection_rate":
-            row = conn.execute(
-                """SELECT SUM(total_paid)::DOUBLE /
-                          NULLIF(SUM(total_billed - COALESCE(total_allowed, 0) * 0.0), 0)
-                     FROM claims WHERE submission_date >= ?""",
-                (date.today() - timedelta(days=30),),
-            ).fetchone()
-            v = float(row[0]) if row and row[0] else 0.0
-            return min(1.0, v)
-        if metric == "ar_over_90":
-            row = conn.execute(
-                """SELECT SUM(bucket_91_120 + bucket_over_120)::DOUBLE / NULLIF(SUM(total_ar), 0)
-                     FROM ar_aging_snapshot
-                    WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM ar_aging_snapshot)"""
-            ).fetchone()
-            return float(row[0]) if row and row[0] else 0.0
-        if metric == "charge_lag":
-            row = conn.execute(
-                """SELECT AVG(charge_lag_days)::DOUBLE FROM encounters
-                    WHERE service_date >= ?""",
-                (date.today() - timedelta(days=30),),
-            ).fetchone()
-            return float(row[0]) if row and row[0] else 0.0
-        if metric == "appeal_overturn_rate":
-            row = conn.execute(
-                """SELECT COUNT(*) FILTER (WHERE overturn_flag)::DOUBLE /
-                          NULLIF(COUNT(*) FILTER (WHERE appeal_submitted_at IS NOT NULL), 0)
-                     FROM denials"""
-            ).fetchone()
-            return float(row[0]) if row and row[0] else 0.0
-        if metric == "open_hitl_tasks":
-            row = conn.execute(
-                "SELECT COUNT(*) FROM hitl_tasks WHERE status = 'pending'"
-            ).fetchone()
-            return float(row[0]) if row else 0.0
+        with locked() as conn:
+            if metric == "days_in_ar":
+                row = conn.execute(
+                    """SELECT SUM(total_ar * days_in_ar) / NULLIF(SUM(total_ar), 0)
+                         FROM ar_aging_snapshot
+                        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM ar_aging_snapshot)"""
+                ).fetchone()
+                return float(row[0]) if row and row[0] else 0.0
+            if metric == "denial_rate":
+                row = conn.execute(
+                    """SELECT COUNT(*) FILTER (WHERE claim_status = 'Denied')::DOUBLE /
+                              NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied','Appealed')), 0)
+                         FROM claims WHERE submission_date >= ?""",
+                    (date.today() - timedelta(days=30),),
+                ).fetchone()
+                return float(row[0]) if row and row[0] else 0.0
+            if metric == "net_collection_rate":
+                row = conn.execute(
+                    """SELECT SUM(total_paid)::DOUBLE /
+                              NULLIF(SUM(total_billed - COALESCE(total_allowed, 0) * 0.0), 0)
+                         FROM claims WHERE submission_date >= ?""",
+                    (date.today() - timedelta(days=30),),
+                ).fetchone()
+                v = float(row[0]) if row and row[0] else 0.0
+                return min(1.0, v)
+            if metric == "ar_over_90":
+                row = conn.execute(
+                    """SELECT SUM(bucket_91_120 + bucket_over_120)::DOUBLE / NULLIF(SUM(total_ar), 0)
+                         FROM ar_aging_snapshot
+                        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM ar_aging_snapshot)"""
+                ).fetchone()
+                return float(row[0]) if row and row[0] else 0.0
+            if metric == "charge_lag":
+                row = conn.execute(
+                    """SELECT AVG(charge_lag_days)::DOUBLE FROM encounters
+                        WHERE service_date >= ?""",
+                    (date.today() - timedelta(days=30),),
+                ).fetchone()
+                return float(row[0]) if row and row[0] else 0.0
+            if metric == "appeal_overturn_rate":
+                row = conn.execute(
+                    """SELECT COUNT(*) FILTER (WHERE overturn_flag)::DOUBLE /
+                              NULLIF(COUNT(*) FILTER (WHERE appeal_submitted_at IS NOT NULL), 0)
+                         FROM denials"""
+                ).fetchone()
+                return float(row[0]) if row and row[0] else 0.0
+            if metric == "open_hitl_tasks":
+                row = conn.execute(
+                    "SELECT COUNT(*) FROM hitl_tasks WHERE status = 'pending'"
+                ).fetchone()
+                return float(row[0]) if row else 0.0
         return 0.0
 
     def _status_for(self, cfg: dict, value: float) -> str:

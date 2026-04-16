@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import require_api_key
 from app.data.fixtures_loader import scenarios as load_scenarios
-from app.database import get_connection
+from app.database import locked
 from app.db_schema import init_schema, reset_all_tables
 from app.orchestrator.scenarios import run_scenario
 
@@ -41,8 +41,8 @@ async def run(payload: dict) -> dict:
 def reset() -> dict:
     """Reset DB back to seed state. PRD §10.2: <10s."""
     from scripts.seed_all import main as seed_main
-    conn = get_connection()
-    init_schema(conn)
-    reset_all_tables(conn)
+    with locked() as conn:
+        init_schema(conn)
+        reset_all_tables(conn)
     seed_main()
     return {"status": "reset", "message": "Database reseeded"}

@@ -6,31 +6,31 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from app.database import get_connection
+from app.database import locked
 
 
 def get_patient_balances(min_balance: float = 10.0, limit: int = 100) -> list[dict[str, Any]]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT e.patient_id, SUM(c.patient_responsibility) AS balance
-             FROM claims c
-             JOIN encounters e ON c.encounter_id = e.encounter_id
-            WHERE c.patient_responsibility > 0
-            GROUP BY e.patient_id
-           HAVING SUM(c.patient_responsibility) >= ?
-            ORDER BY balance DESC
-            LIMIT ?""",
-        (min_balance, limit),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT e.patient_id, SUM(c.patient_responsibility) AS balance
+                 FROM claims c
+                 JOIN encounters e ON c.encounter_id = e.encounter_id
+                WHERE c.patient_responsibility > 0
+                GROUP BY e.patient_id
+               HAVING SUM(c.patient_responsibility) >= ?
+                ORDER BY balance DESC
+                LIMIT ?""",
+            (min_balance, limit),
+        ).fetchall()
     return [{"patient_id": r[0], "balance": float(r[1])} for r in rows]
 
 
 def check_charity_care_eligibility(patient_id: str, balance: float) -> dict[str, Any]:
     """Income-based mock screening — the demo assumes income correlates inversely with propensity."""
-    conn = get_connection()
-    row = conn.execute(
-        "SELECT propensity_score FROM patients WHERE patient_id = ?", (patient_id,)
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            "SELECT propensity_score FROM patients WHERE patient_id = ?", (patient_id,)
+        ).fetchone()
     if not row:
         return {"eligible": False, "tier": None}
     prop = float(row[0])

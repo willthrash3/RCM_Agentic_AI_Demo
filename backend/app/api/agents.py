@@ -11,7 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from app.agents import AGENT_REGISTRY
 from app.agents.task_runner import register_task, run_agent_background
 from app.api.deps import require_api_key
-from app.database import get_connection
+from app.database import locked
 from app.models.agent import AgentInput, AgentOutput, AgentRunResponse, AgentTaskStatus
 
 router = APIRouter(prefix="/agents", tags=["agents"], dependencies=[Depends(require_api_key)])
@@ -121,13 +121,13 @@ async def run_analytics(payload: dict | None = None, *, background_tasks: Backgr
 
 @router.get("/tasks/{task_id}", response_model=AgentTaskStatus)
 def get_task(task_id: str) -> AgentTaskStatus:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT task_id, agent_name, status, confidence, output_json,
-                  created_at, completed_at, error_message
-             FROM agent_tasks WHERE task_id = ?""",
-        (task_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT task_id, agent_name, status, confidence, output_json,
+                      created_at, completed_at, error_message
+                 FROM agent_tasks WHERE task_id = ?""",
+            (task_id,),
+        ).fetchone()
     if not row:
         raise HTTPException(404, "Task not found")
     output = None
@@ -145,11 +145,11 @@ def get_task(task_id: str) -> AgentTaskStatus:
 
 @router.get("/tasks")
 def list_tasks(limit: int = 50) -> list[dict[str, Any]]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT task_id, agent_name, status, confidence, created_at, completed_at
-             FROM agent_tasks ORDER BY created_at DESC LIMIT ?""",
-        (limit,),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT task_id, agent_name, status, confidence, created_at, completed_at
+                 FROM agent_tasks ORDER BY created_at DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
     cols = ["task_id", "agent_name", "status", "confidence", "created_at", "completed_at"]
     return [dict(zip(cols, r)) for r in rows]

@@ -5,17 +5,17 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from app.database import get_connection
+from app.database import locked
 
 
 def get_patient_demographics(patient_id: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT patient_id, first_name, last_name, dob, gender, address_line1,
-                  city, state, zip_code, phone, email, mrn, language_pref
-             FROM patients WHERE patient_id = ?""",
-        (patient_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT patient_id, first_name, last_name, dob, gender, address_line1,
+                      city, state, zip_code, phone, email, mrn, language_pref
+                 FROM patients WHERE patient_id = ?""",
+            (patient_id,),
+        ).fetchone()
     if not row:
         return {}
     cols = ["patient_id", "first_name", "last_name", "dob", "gender", "address_line1",
@@ -24,11 +24,11 @@ def get_patient_demographics(patient_id: str) -> dict[str, Any]:
 
 
 def get_patient_insurance(patient_id: str) -> list[dict[str, Any]]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT primary_payer_id, secondary_payer_id FROM patients WHERE patient_id = ?""",
-        (patient_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT primary_payer_id, secondary_payer_id FROM patients WHERE patient_id = ?""",
+            (patient_id,),
+        ).fetchone()
     if not row:
         return []
     insurances = []
@@ -40,11 +40,11 @@ def get_patient_insurance(patient_id: str) -> list[dict[str, Any]]:
 
 
 def get_patient_contact_preferences(patient_id: str) -> dict[str, Any]:
-    conn = get_connection()
-    row = conn.execute(
-        """SELECT phone, email, language_pref FROM patients WHERE patient_id = ?""",
-        (patient_id,),
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            """SELECT phone, email, language_pref FROM patients WHERE patient_id = ?""",
+            (patient_id,),
+        ).fetchone()
     if not row:
         return {}
     return {
@@ -54,8 +54,8 @@ def get_patient_contact_preferences(patient_id: str) -> dict[str, Any]:
 
 
 def get_patient_propensity(patient_id: str) -> float:
-    conn = get_connection()
-    row = conn.execute(
-        "SELECT propensity_score FROM patients WHERE patient_id = ?", (patient_id,)
-    ).fetchone()
+    with locked() as conn:
+        row = conn.execute(
+            "SELECT propensity_score FROM patients WHERE patient_id = ?", (patient_id,)
+        ).fetchone()
     return float(row[0]) if row else 0.5

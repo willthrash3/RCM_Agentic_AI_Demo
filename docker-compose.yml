@@ -25,6 +25,7 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000/api/v1
       - VITE_API_KEY=${DEMO_API_KEY:-demo-key-12345}
+      - BACKEND_URL=http://backend:8000
     volumes:
       - ./frontend/src:/app/src
     depends_on:

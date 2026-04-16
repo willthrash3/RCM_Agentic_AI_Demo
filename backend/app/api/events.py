@@ -11,7 +11,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.agents.event_bus import get_event_bus
 from app.config import get_settings
-from app.database import get_connection
+from app.database import locked
 
 router = APIRouter(tags=["events"])
 
@@ -65,14 +65,14 @@ async def stream(
 
 @router.get("/events/recent")
 def recent_events(limit: int = 100) -> list[dict]:
-    conn = get_connection()
-    rows = conn.execute(
-        """SELECT event_id, task_id, agent_name, action_type, entity_type,
-                  entity_id, reasoning_trace, confidence, hitl_required, created_at
-             FROM agent_event_log
-            ORDER BY created_at DESC LIMIT ?""",
-        (limit,),
-    ).fetchall()
+    with locked() as conn:
+        rows = conn.execute(
+            """SELECT event_id, task_id, agent_name, action_type, entity_type,
+                      entity_id, reasoning_trace, confidence, hitl_required, created_at
+                 FROM agent_event_log
+                ORDER BY created_at DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
     cols = ["event_id", "task_id", "agent_name", "action_type", "entity_type",
             "entity_id", "reasoning_trace", "confidence", "hitl_required", "created_at"]
     return [dict(zip(cols, r)) for r in rows]
