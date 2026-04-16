@@ -14,10 +14,10 @@ def seed_patient_rows():
     # address_line1, city, state, zip_code, phone, email, mrn,
     # primary_payer_id, secondary_payer_id, propensity_score, language_pref, created_at
     conn.execute(
-        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         ("pt-api-test-1", "John", "Apitester", date(1980, 5, 15), "M",
          "123 Main St", "Springfield", "IL", "62701", "555-1234",
-         "john@test.com", "MRN-API-001", "payer-001", None, 0.72, "EN", None),
+         "john@test.com", "MRN-API-001", "payer-001", None, 0.72, "EN", None, False),
     )
 
 

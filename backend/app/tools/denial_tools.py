@@ -146,14 +146,10 @@ async def submit_appeal(denial_id: str, appeal_letter_text: str) -> dict[str, An
         )
         body = resp.json() if resp.status_code == 200 else {"case_number": None}
     with transaction() as c:
+        # Appeal state is tracked on denials.appeal_submitted_at; claim_status stays 'Denied'
         c.execute(
             """UPDATE denials SET appeal_letter_text = ?, appeal_submitted_at = ? WHERE denial_id = ?""",
             (appeal_letter_text, datetime.utcnow(), denial_id),
-        )
-        # Appeal state is derived from appeal_submitted_at; claim_status stays 'Denied'
-        c.execute(
-            "UPDATE claims SET appeal_submitted_at = ? WHERE claim_id = ?",
-            (datetime.utcnow(), claim_id),
         )
     return {"success": True, "case_number": body.get("case_number")}
 

@@ -24,22 +24,24 @@ def list_claims(
     where = ["1=1"]
     args: list = []
     if status:
-        where.append("claim_status = ?"); args.append(status)
+        where.append("c.claim_status = ?"); args.append(status)
     if payer_id:
-        where.append("payer_id = ?"); args.append(payer_id)
+        where.append("c.payer_id = ?"); args.append(payer_id)
     if date_from:
-        where.append("submission_date >= ?"); args.append(date_from)
+        where.append("c.submission_date >= ?"); args.append(date_from)
     if date_to:
-        where.append("submission_date <= ?"); args.append(date_to)
+        where.append("c.submission_date <= ?"); args.append(date_to)
     clause = " AND ".join(where)
     with locked() as conn:
-        total = conn.execute(f"SELECT COUNT(*) FROM claims WHERE {clause}", args).fetchone()[0]
+        total = conn.execute(f"SELECT COUNT(*) FROM claims c WHERE {clause}", args).fetchone()[0]
         rows = conn.execute(
-            f"""SELECT claim_id, encounter_id, payer_id, total_billed, total_paid,
-                       claim_status, submission_date, adjudication_date,
-                       rejection_reason, scrub_score, appeal_submitted_at
-                  FROM claims WHERE {clause}
-                  ORDER BY COALESCE(submission_date, DATE '2020-01-01') DESC
+            f"""SELECT c.claim_id, c.encounter_id, c.payer_id, c.total_billed, c.total_paid,
+                       c.claim_status, c.submission_date, c.adjudication_date,
+                       c.rejection_reason, c.scrub_score, d.appeal_submitted_at
+                  FROM claims c
+                  LEFT JOIN denials d ON d.claim_id = c.claim_id
+                  WHERE {clause}
+                  ORDER BY COALESCE(c.submission_date, DATE '2020-01-01') DESC
                   LIMIT ? OFFSET ?""",
             args + [page_size, offset],
         ).fetchall()

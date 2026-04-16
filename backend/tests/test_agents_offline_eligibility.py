@@ -17,17 +17,17 @@ def seed_elig_rows():
     conn = get_connection()
     # Patient with no insurance
     conn.execute(
-        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         ("pt-elig-no-ins", "NoIns", "Patient", date(1990, 1, 1), "F",
          "123 Test St", "Chicago", "IL", "60601", "555-0001",
-         "noons@test.com", "MRN-ELIG-001", None, None, 0.5, "EN", None),
+         "noons@test.com", "MRN-ELIG-001", None, None, 0.5, "EN", None, False),
     )
     # Patient with primary insurance
     conn.execute(
-        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        """INSERT OR REPLACE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         ("pt-elig-has-ins", "HasIns", "Patient", date(1985, 6, 15), "M",
          "456 Test Ave", "Chicago", "IL", "60602", "555-0002",
-         "hasins@test.com", "MRN-ELIG-002", "payer-001", None, 0.8, "EN", None),
+         "hasins@test.com", "MRN-ELIG-002", "payer-001", None, 0.8, "EN", None, False),
     )
 
 
