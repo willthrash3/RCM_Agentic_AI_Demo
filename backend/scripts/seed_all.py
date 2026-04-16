@@ -227,6 +227,8 @@ def seed_claims_and_lines(conn, encounters_list: list[dict], patients_list: list
         claim_id = f"clm-{i + 1:05d}"
         patient = patients_by_id[enc["patient_id"]]
         payer_id = patient["primary_payer_id"]
+        if not payer_id or payer_id not in payers_by_id:
+            continue
         if payer_id == "payer-007":  # Self-Pay patients rarely have claims
             if random.random() < 0.7:
                 continue
