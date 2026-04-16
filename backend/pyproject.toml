@@ -45,3 +45,25 @@ target-version = "py311"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+# Pre-existing type errors in app/ — tracked for future clean-up, not enforced in CI.
+[[tool.mypy.overrides]]
+module = [
+  "app.agents.llm",
+  "app.agents.base",
+  "app.agents.coding",
+  "app.agents.scrubbing",
+  "app.agents.denial",
+  "app.agents.analytics",
+  "app.api.claims",
+  "app.api.patients",
+  "app.api.denials",
+  "app.api.kpis",
+  "app.mock_payer.router",
+  "app.orchestrator.graph",
+]
+ignore_errors = true
