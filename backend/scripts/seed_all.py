@@ -13,6 +13,7 @@ Seed is deterministic (random.seed + Faker.seed_instance). Target runtime: <60 s
 from __future__ import annotations
 
 import json
+import os
 import random
 import sys
 import uuid
@@ -36,8 +37,26 @@ random.seed(SEED)
 FAKE = Faker("en_US")
 FAKE.seed_instance(SEED)
 
-TODAY = date(2026, 4, 15)  # Fixed "today" so the demo story is consistent
+TODAY = date.fromisoformat(os.getenv("DEMO_AS_OF_DATE", "2026-04-15"))  # Override via env var
 NUM_PATIENTS = 500
+
+
+def generate_npi() -> str:
+    """Generate a Luhn-valid 10-digit NPI using the NPI prefix 80840."""
+    # NPI check digit uses Luhn algorithm with prefix 80840
+    prefix = "80840"
+    nine_digits = prefix + "".join(str(random.randint(0, 9)) for _ in range(4))
+    # Luhn: double every other digit from right (positions 2,4,6,8,10 in 1-indexed)
+    total = 0
+    for i, ch in enumerate(reversed(nine_digits)):
+        n = int(ch)
+        if i % 2 == 0:  # even index from right → double
+            n *= 2
+            if n > 9:
+                n -= 9
+        total += n
+    check = (10 - (total % 10)) % 10
+    return nine_digits + str(check)
 NUM_ENCOUNTERS = 3000
 
 SOUTHEAST_CITIES = [
@@ -56,8 +75,7 @@ SOUTHEAST_CITIES = [
 CLAIM_STATUS_MIX = [
     ("Paid", 0.55),
     ("Submitted", 0.20),
-    ("Denied", 0.18),
-    ("Appealed", 0.05),
+    ("Denied", 0.23),
     ("Draft", 0.02),
 ]
 ENCOUNTER_TYPE_MIX = [
@@ -84,7 +102,7 @@ def seed_payers(conn) -> list[dict]:
         conn.execute(
             """INSERT INTO payers VALUES (?,?,?,?,?,?,?,?,?)""",
             (
-                p["payer_id"], p["payer_name"], p["payer_type"], p["payer_id_x12"],
+                p["payer_id"], p["payer_name"], p["payer_type"], p["payer_id_x12_fictional"],
                 p["avg_days_to_pay"], p["denial_rate_baseline"], p["timely_filing_days"],
                 p["fee_schedule_multiplier"], p["portal_mock_url"],
             ),
@@ -116,6 +134,11 @@ def seed_patients(conn, payer_rows: list[dict]) -> list[dict]:
         secondary = random.choice(payer_ids) if random.random() < 0.22 else None
         if secondary == primary:
             secondary = None
+        # Self-pay patients get NULL payer IDs
+        is_self_pay = primary == "payer-007"
+        if is_self_pay:
+            primary = None
+            secondary = None
         propensity = round(random.betavariate(2, 2), 2)
         lang = random.choices(["EN", "ES", "Other"], weights=[78, 18, 4])[0]
         email = f"{first.lower()}.{last.lower()}@example.com"
@@ -129,12 +152,13 @@ def seed_patients(conn, payer_rows: list[dict]) -> list[dict]:
             "address_line1": FAKE.street_address(), "phone": FAKE.numerify("###-555-####"),
             "email": email, "mrn": f"MRN-{10000 + i}", "primary_payer_id": primary,
             "secondary_payer_id": secondary, "propensity_score": propensity,
-            "language_pref": lang, "created_at": created_at,
+            "language_pref": lang, "created_at": created_at, "is_self_pay": is_self_pay,
         }
         conn.execute(
-            """INSERT INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            """INSERT INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (pid, first, last, dob, gender, row["address_line1"], city, state, zipc,
-             row["phone"], email, row["mrn"], primary, secondary, propensity, lang, created_at),
+             row["phone"], email, row["mrn"], primary, secondary, propensity, lang, created_at,
+             is_self_pay),
         )
         patients_out.append(row)
     print(f"  patients: {len(patients_out)}")
@@ -176,8 +200,8 @@ def seed_encounters(conn, patients_list: list[dict]) -> list[dict]:
         )[0]
         conn.execute(
             """INSERT INTO encounters VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (eid, patient["patient_id"], FAKE.numerify("##########"),
-             FAKE.numerify("##########"), etype, svc_date, discharge, pos,
+            (eid, patient["patient_id"], generate_npi(),
+             generate_npi(), etype, svc_date, discharge, pos,
              physician, template["clinical_label"], soap_text, template["scenario_id"],
              auth_required, auth_status, charge_lag, status),
         )
@@ -223,14 +247,14 @@ def seed_claims_and_lines(conn, encounters_list: list[dict], patients_list: list
         paid: Decimal = Decimal("0.00")
         pt_resp: Decimal = Decimal("0.00")
         rejection: str | None = None
-        if status in ("Submitted", "Paid", "Denied", "Appealed"):
+        if status in ("Submitted", "Paid", "Denied"):
             submission_date = enc["service_date"] + timedelta(days=random.randint(1, 5))
-            if status in ("Paid", "Denied", "Appealed"):
+            if status in ("Paid", "Denied"):
                 adjudication_date = submission_date + timedelta(days=payer["avg_days_to_pay"])
         if status == "Paid":
             paid = _decimal(float(allowed) * 0.82)
             pt_resp = _decimal(float(allowed) - float(paid))
-        if status in ("Denied", "Appealed"):
+        if status == "Denied":
             rejection = random.choice(carc_list)
         tf_deadline = enc["service_date"] + timedelta(days=payer["timely_filing_days"])
         scrub_score = round(random.uniform(0.82, 0.99), 2) if status != "Draft" else None
@@ -264,7 +288,7 @@ def seed_denials(conn, claims_list: list[dict]) -> int:
     payers_by_id = {p["payer_id"]: p for p in payers()}
     count = 0
     for cl in claims_list:
-        if cl["status"] not in ("Denied", "Appealed"):
+        if cl["status"] != "Denied":
             continue
         carc = cl["rejection"] or "CO-16"
         meta = carc_map.get(carc, {"category": "Other"})
@@ -272,7 +296,9 @@ def seed_denials(conn, claims_list: list[dict]) -> int:
         denial_date = cl["adjudication_date"] or TODAY
         payer = payers_by_id[cl["payer_id"]]
         appeal_deadline = denial_date + timedelta(days=min(60, payer["timely_filing_days"] // 2))
-        overturn_flag = cl["status"] == "Appealed" and random.random() < 0.55
+        # ~20% of denied claims have an appeal already submitted (derived state, not a status)
+        appeal_submitted = cl.get("appeal_submitted_at") is not None if "appeal_submitted_at" in cl else random.random() < 0.20
+        overturn_flag = appeal_submitted and random.random() < 0.55
         overturn_date = denial_date + timedelta(days=random.randint(14, 45)) if overturn_flag else None
         rarc = random.choice(rarc_list) if random.random() < 0.6 else None
         conn.execute(

@@ -8,13 +8,14 @@ from decimal import Decimal
 from typing import Any
 
 from app.database import get_connection, locked, transaction
+from app.utils.time import get_demo_today
 
 
 def get_ar_aging_snapshot(as_of_date: date | None = None) -> dict[str, Any]:
     with locked() as conn:
         if as_of_date is None:
             row = conn.execute("SELECT MAX(snapshot_date) FROM ar_aging_snapshot").fetchone()
-            as_of_date = row[0] if row and row[0] else date.today()
+            as_of_date = row[0] if row and row[0] else get_demo_today()
         rows = conn.execute(
             """SELECT payer_id, bucket_0_30, bucket_31_60, bucket_61_90,
                       bucket_91_120, bucket_over_120, total_ar, days_in_ar
@@ -40,7 +41,7 @@ def get_ar_aging_snapshot(as_of_date: date | None = None) -> dict[str, Any]:
 
 
 def get_kpi_timeseries(metric: str, days_back: int = 30) -> list[dict[str, Any]]:
-    today = date.today()
+    today = get_demo_today()
     points: list[dict[str, Any]] = []
     with locked() as conn:
         for i in range(days_back, -1, -1):
@@ -55,7 +56,7 @@ def get_kpi_timeseries(metric: str, days_back: int = 30) -> list[dict[str, Any]]
             elif metric == "denial_rate":
                 row = conn.execute(
                     """SELECT COUNT(*) FILTER (WHERE claim_status = 'Denied')::DOUBLE /
-                              NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied','Appealed')), 0)
+                              NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied')), 0)
                          FROM claims WHERE submission_date = ?""",
                     (d,),
                 ).fetchone()
@@ -88,7 +89,7 @@ def get_denial_rate_by_payer(period_days: int = 30) -> list[dict[str, Any]]:
                 WHERE submission_date >= ?
                 GROUP BY payer_id
                 ORDER BY rate DESC""",
-            (date.today() - timedelta(days=period_days),),
+            (get_demo_today() - timedelta(days=period_days),),
         ).fetchall()
     return [{"payer_id": r[0], "denial_rate": float(r[1] or 0), "total_claims": r[2]} for r in rows]
 
@@ -100,7 +101,7 @@ def get_first_pass_rate(period_days: int = 30) -> float:
                       NULLIF(COUNT(*), 0)
                  FROM claims
                 WHERE submission_date >= ?""",
-            (date.today() - timedelta(days=period_days),),
+            (get_demo_today() - timedelta(days=period_days),),
         ).fetchone()
     return float(row[0]) if row and row[0] else 0.0
 

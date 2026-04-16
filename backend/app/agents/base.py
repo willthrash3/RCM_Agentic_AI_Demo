@@ -136,10 +136,11 @@ class BaseAgent(ABC):
         entity_type: str,
         entity_id: str,
         fallback: dict | None = None,
+        model: str | None = None,
     ) -> dict:
         """Call Claude and stream reasoning events. Returns parsed JSON dict."""
         await self.reasoning(entity_type, entity_id, "Calling Claude for decision...")
-        response = await run_llm(system=system, user=user, fallback=fallback)
+        response = await run_llm(system=system, user=user, fallback=fallback, model=model)
         reasoning = response.get("_reasoning", "")
         if reasoning:
             await self.reasoning(entity_type, entity_id, reasoning)

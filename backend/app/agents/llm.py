@@ -16,6 +16,7 @@ import json
 import re
 from typing import Any
 
+from app.agents.llm_cache import get_cached, put_cached
 from app.config import get_settings
 
 try:  # Optional import — allows CI / offline mode without the SDK installed
@@ -60,6 +61,7 @@ async def run_llm(
     fallback: dict | None = None,
     max_tokens: int | None = None,
     temperature: float | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
     settings = get_settings()
     if settings.agent_offline_mode or not settings.anthropic_api_key or AsyncAnthropic is None:
@@ -67,10 +69,16 @@ async def run_llm(
         fb = dict(fallback or {})
         fb.setdefault("_reasoning", "Offline mode: returning scripted demo decision.")
         return fb
+    effective_model = model or settings.claude_model
+    # Check cache before making API call
+    cached = get_cached(effective_model, system, user)
+    if cached is not None:
+        return cached
+
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     try:
         resp = await client.messages.create(
-            model=settings.claude_model,
+            model=effective_model,
             max_tokens=max_tokens or settings.agent_max_tokens,
             temperature=settings.agent_temperature if temperature is None else temperature,
             system=system + "\n\nRespond ONLY with valid JSON matching the requested schema.",
@@ -85,6 +93,7 @@ async def run_llm(
             fb = dict(fallback or {})
             fb["_reasoning"] = f"LLM response was not valid JSON; using fallback. Raw: {text[:200]}"
             return fb
+        put_cached(effective_model, system, user, parsed)
         return parsed
     except Exception as exc:  # pragma: no cover — demo robustness
         fb = dict(fallback or {})

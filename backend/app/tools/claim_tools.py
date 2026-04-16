@@ -11,6 +11,7 @@ import httpx
 from app.config import get_settings
 from app.data.fixtures_loader import cpt_codes, payer_edit_rules, payers
 from app.database import locked, transaction
+from app.utils.time import get_demo_today
 
 
 def get_claim_with_lines(claim_id: str) -> dict[str, Any]:
@@ -111,12 +112,12 @@ def write_scrub_result(claim_id: str, score: float, edits: list[dict], release_f
         if release_flag:
             conn.execute(
                 "UPDATE claims SET claim_status = 'Submitted', submission_date = ? WHERE claim_id = ?",
-                (date.today(), claim_id),
+                (get_demo_today(), claim_id),
             )
 
 
 def get_submitted_claims(days_submitted_min: int = 1) -> list[dict[str, Any]]:
-    threshold = date.today() - timedelta(days=days_submitted_min)
+    threshold = get_demo_today() - timedelta(days=days_submitted_min)
     with locked() as conn:
         rows = conn.execute(
             """SELECT claim_id, payer_id, submission_date, total_billed, claim_status
@@ -133,7 +134,7 @@ def get_submitted_claims(days_submitted_min: int = 1) -> list[dict[str, Any]]:
 
 async def query_payer_claim_status(claim_id: str, payer_id: str) -> dict[str, Any]:
     payer_lookup = next((p for p in payers() if p["payer_id"] == payer_id), None)
-    x12 = payer_lookup["payer_id_x12"] if payer_lookup else payer_id
+    x12 = payer_lookup["payer_id_x12_fictional"] if payer_lookup else payer_id
     url = f"{get_settings().mock_payer_base_url.rstrip('/')}/payer/{x12}/claim/status"
     async with httpx.AsyncClient(timeout=5.0) as client:
         resp = await client.get(url, params={"claim_id": claim_id})

@@ -9,7 +9,7 @@
     {"rule_id": "TNM-AUTH-001", "cpt": "99285", "requires_auth": true, "description": "High-complexity ED requires notification within 24h", "severity": "Error"}
   ],
   "payer-003": [
-    {"rule_id": "BSC-LCD-001", "cpt": "99214", "requires_dx_in": ["I10", "E11.9", "E11.65", "F32.9", "F41.1", "E78.5", "J06.9", "M54.5", "N39.0", "K21.0", "Z00.00"], "description": "Moderate-complexity E&M LCD restrictions", "severity": "Error"},
+    {"rule_id": "BSC-LCD-001", "cpt": "99214", "requires_dx_in": ["I10", "E11.9", "E11.65", "F32.9", "F41.1", "E78.5", "J06.9", "M54.50", "N39.0", "K21.0", "Z00.00"], "description": "Moderate-complexity E&M LCD restrictions", "severity": "Error"},
     {"rule_id": "BSC-AUTH-001", "cpt": "20610", "requires_auth": true, "description": "Joint injection requires auth", "severity": "Critical"}
   ],
   "payer-004": [

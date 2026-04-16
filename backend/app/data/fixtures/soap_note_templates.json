@@ -51,7 +51,7 @@
     "scenario_id": "back_pain",
     "clinical_label": "Low back pain",
     "expected_cpt": "99213",
-    "expected_primary_icd10": "M54.5",
+    "expected_primary_icd10": "M54.50",
     "additional_icd10": [],
     "soap_note_text": "S: {patient_name}, {age} y/o {gender} presents with 1 week of non-radiating lumbar pain after lifting a heavy box. Denies saddle anesthesia, bowel/bladder changes, leg weakness.\nO: Lumbar paraspinal spasm, limited flexion. SLR negative bilaterally. DTRs 2+ symmetric. Strength 5/5 LE.\nA: Acute mechanical low back pain.\nP: NSAIDs scheduled, muscle relaxant prn, heat, light activity, home exercises. Avoid heavy lifting x 2 weeks. Return if red flags."
   },

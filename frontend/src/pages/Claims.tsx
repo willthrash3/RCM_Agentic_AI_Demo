@@ -14,13 +14,13 @@ interface Claim {
   submission_date: string;
   rejection_reason: string | null;
   scrub_score: number | null;
+  appeal_submitted_at: string | null;
 }
 
 const statusColor: Record<string, string> = {
   Paid: 'bg-emerald-100 text-emerald-800',
   Submitted: 'bg-sky-100 text-sky-800',
   Denied: 'bg-rose-100 text-rose-800',
-  Appealed: 'bg-violet-100 text-violet-800',
   Draft: 'bg-slate-100 text-slate-700',
 };
 
@@ -58,7 +58,7 @@ export default function Claims() {
           className="border rounded px-2 py-1"
         >
           <option value="">All statuses</option>
-          {['Draft', 'Submitted', 'Paid', 'Denied', 'Appealed'].map((s) => (
+          {['Draft', 'Submitted', 'Paid', 'Denied'].map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
@@ -102,8 +102,10 @@ export default function Claims() {
                 <td className="px-3 py-2 text-right">${Number(c.total_billed).toFixed(2)}</td>
                 <td className="px-3 py-2 text-right">${Number(c.total_paid || 0).toFixed(2)}</td>
                 <td className="px-3 py-2">
-                  <span className={clsx('text-xs px-2 py-0.5 rounded', statusColor[c.claim_status])}>
-                    {c.claim_status}
+                  <span className={clsx('text-xs px-2 py-0.5 rounded', statusColor[c.claim_status] ?? 'bg-slate-100 text-slate-700')}>
+                    {c.claim_status === 'Denied' && c.appeal_submitted_at
+                      ? 'Denied (Appealed)'
+                      : c.claim_status}
                   </span>
                 </td>
                 <td className="px-3 py-2">{scrubChip(c.scrub_score)}</td>

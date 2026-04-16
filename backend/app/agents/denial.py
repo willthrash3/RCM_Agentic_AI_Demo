@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from app.agents.base import BaseAgent
+from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
 from app.tools.denial_tools import (
     calculate_appeal_deadline,
@@ -22,6 +23,7 @@ from app.tools.denial_tools import (
     get_denial_detail,
     get_prior_auth_record,
     render_appeal_letter,
+    self_review_appeal_letter,
     submit_appeal,
 )
 
@@ -89,7 +91,7 @@ class DenialAgent(BaseAgent):
                              f"category={classification['denial_category']} appealable={classification['appealable']}")
 
         appeal_deadline = calculate_appeal_deadline(denial["denial_date"], claim["payer_id"])
-        days_to_deadline = (appeal_deadline - date.today()).days if isinstance(appeal_deadline, date) else 60
+        days_to_deadline = (appeal_deadline - get_demo_today()).days if isinstance(appeal_deadline, date) else 60
 
         decision = await self.call_llm(
             system=SYSTEM,
@@ -118,6 +120,7 @@ class DenialAgent(BaseAgent):
                 "corrected_codes": {"cpt": None, "icd10": None},
                 "_reasoning": "Rule-based denial classification and auto-submit check.",
             },
+            model=self.settings.claude_model_reasoning,
         )
 
         category = decision.get("denial_category") or classification["denial_category"]
@@ -159,12 +162,27 @@ class DenialAgent(BaseAgent):
             )
 
             if auto_submit:
-                result = await submit_appeal(denial_id, appeal_text)
-                submitted = bool(result.get("success"))
-                case_number = result.get("case_number")
-                await self.tool_call("denial", denial_id, "submit_appeal",
+                # Self-review gate: only submit if review passes with confidence >= 0.85
+                review = self_review_appeal_letter(appeal_text, claim)
+                await self.tool_call("denial", denial_id, "self_review_appeal_letter",
                                      {"denial_id": denial_id},
-                                     f"submitted={submitted} case_number={case_number}")
+                                     f"passes={review['passes']} confidence={review['confidence']}")
+                if review["passes"] and review["confidence"] >= 0.85:
+                    result = await submit_appeal(denial_id, appeal_text)
+                    submitted = bool(result.get("success"))
+                    case_number = result.get("case_number")
+                    await self.tool_call("denial", denial_id, "submit_appeal",
+                                         {"denial_id": denial_id},
+                                         f"submitted={submitted} case_number={case_number}")
+                else:
+                    # Review failed — route to human
+                    await self.create_hitl_task(
+                        "denial", denial_id,
+                        f"Appeal self-review failed — {review['failed_checks']}",
+                        "High",
+                        "Review and fix appeal letter before submission",
+                        decision.get("_reasoning", ""),
+                    )
             else:
                 await self.create_hitl_task(
                     "denial", denial_id,

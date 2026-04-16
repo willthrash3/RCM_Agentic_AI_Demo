@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import date
 
 from app.agents.base import BaseAgent
+from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
 from app.tools.eligibility_tools import query_payer_eligibility, write_eligibility_result
 from app.tools.patient_tools import get_patient_demographics, get_patient_insurance
@@ -42,13 +43,25 @@ class EligibilityAgent(BaseAgent):
 
     async def run(self, input: AgentInput) -> AgentOutput:
         patient_id = input.entity_id
-        service_date = input.context.get("service_date", str(date.today()))
+        service_date = input.context.get("service_date", str(get_demo_today()))
         await self.started(input, summary=f"Verifying eligibility for {patient_id}")
 
         demographics = get_patient_demographics(patient_id)
         await self.tool_call("patient", patient_id, "get_patient_demographics",
                              {"patient_id": patient_id},
                              f"{demographics.get('first_name','')} {demographics.get('last_name','')}")
+
+        # Self-pay patients do not need eligibility verification
+        if demographics.get("is_self_pay"):
+            output = AgentOutput(
+                status="complete",
+                result={"reason": "self_pay", "eligible": False},
+                reasoning_trace="Patient is self-pay; eligibility check skipped.",
+                confidence=1.0, hitl_required=False,
+            )
+            await self.completed(input, output)
+            return output
+
         insurances = get_patient_insurance(patient_id)
         await self.tool_call("patient", patient_id, "get_patient_insurance",
                              {"patient_id": patient_id}, f"{len(insurances)} insurance(s)")

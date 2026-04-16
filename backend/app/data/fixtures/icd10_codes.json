@@ -16,7 +16,7 @@
   {"code": "J18.9", "description": "Pneumonia, unspecified organism", "category": "Respiratory"},
   {"code": "R05.9", "description": "Cough, unspecified", "category": "Respiratory"},
   {"code": "M17.11", "description": "Unilateral primary osteoarthritis, right knee", "category": "Musculoskeletal"},
-  {"code": "M54.5", "description": "Low back pain", "category": "Musculoskeletal"},
+  {"code": "M54.50", "description": "Low back pain, unspecified", "category": "Musculoskeletal"},
   {"code": "M25.561", "description": "Pain in right knee", "category": "Musculoskeletal"},
   {"code": "F32.9", "description": "Major depressive disorder, single episode, unspecified", "category": "Mental Health"},
   {"code": "F41.1", "description": "Generalized anxiety disorder", "category": "Mental Health"},

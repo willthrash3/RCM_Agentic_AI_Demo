@@ -11,7 +11,7 @@ Technical evaluators — solution architects and IT leads who need to see clean 
 
 1.2  Strategic Objectives
 Demonstrate that agentic AI can reduce Days-in-AR by a simulated 15–25% through faster claim resolution and proactive denial management.
-Show first-pass claim acceptance rate improvement from a baseline of 85% to 94%+ through AI-assisted coding and scrubbing.
+Demonstrate how agents identify and correct the specific error classes that drive first-pass rejections — missing modifiers, LCD mismatches, unbundling conflicts, and auth gaps — each shown live in the reasoning trace viewer. Customer uplift will depend on baseline error distribution.
 Illustrate the human-in-the-loop (HITL) pattern: agents act autonomously on high-confidence tasks and escalate to queues for exceptions.
 Provide a fully runnable codebase that Claude Code can generate end-to-end from this PRD.
 
@@ -578,7 +578,7 @@ Denial Spike | 18% of Medicare claims denied CO-50 on same day | Analytics agent
 Charge Lag Alert | Charge lag spikes to 5.2 days for orthopedics | Analytics agent alerts; dashboard shows trend; HITL task created | 
 Eligibility Gap | 12 patients coverage lapsed before scheduled service | Eligibility agent flags; HITL queue shows 12 tasks; financial counseling offered | 
 Underpayment Pattern | Apex PPO underpaying 99215 by 12% for 30 days | Tracking agent flags variance; analytics agent surfaces systemic pattern | 
-High-Value Denial Overturn | $28,400 inpatient claim denied; coding agent fixes; appeal auto-submitted | Denial agent classifies CO-4; corrects to DRG 194; appeal generated and submitted | 
+High-Value Denial Overturn | $28,400 inpatient claim denied CO-11 (Dx inconsistent); coding agent corrects primary diagnosis; appeal auto-submitted | Denial agent classifies CO-11 as Coding/DX; corrected primary diagnosis from R07.9 to I21.4; appeal generated and submitted | 
 SECTION 6 — API SPECIFICATIONS | 
 Method | Path | Request Body / Params | Response | 
 GET | /patients | page, page_size, search | PaginatedPatientList | 

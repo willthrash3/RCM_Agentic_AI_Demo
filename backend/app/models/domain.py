@@ -33,7 +33,7 @@ class Payer(BaseModel):
     payer_id: str
     payer_name: str
     payer_type: str
-    payer_id_x12: str
+    payer_id_x12_fictional: str
     avg_days_to_pay: int
     denial_rate_baseline: float
     timely_filing_days: int

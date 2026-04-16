@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from app.agents.base import BaseAgent
+from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
 from app.tools.claim_tools import (
     check_bundling_rules,
@@ -97,8 +98,8 @@ class ScrubbingAgent(BaseAgent):
         # Timely filing
         tf = claim.get("timely_filing_deadline")
         if tf:
-            days_remaining = (tf - date.today()).days if hasattr(tf, "days") else (
-                (tf - date.today()).days if tf else 999
+            days_remaining = (tf - get_demo_today()).days if hasattr(tf, "days") else (
+                (tf - get_demo_today()).days if tf else 999
             )
             if days_remaining < 14 and days_remaining >= 0:
                 warnings.append(f"Timely filing risk: {days_remaining} days left")

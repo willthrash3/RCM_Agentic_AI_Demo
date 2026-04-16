@@ -32,7 +32,7 @@ async def _apply_latency_and_error() -> None:
 
 def _payer_or_404(payer_id: str) -> dict:
     for p in payers():
-        if p["payer_id_x12"].lower() == payer_id.lower() or p["payer_id"] == payer_id:
+        if p["payer_id_x12_fictional"].lower() == payer_id.lower() or p["payer_id"] == payer_id:
             return p
     raise HTTPException(status_code=404, detail=f"Unknown payer {payer_id}")
 

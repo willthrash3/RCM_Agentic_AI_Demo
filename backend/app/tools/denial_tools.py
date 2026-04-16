@@ -13,6 +13,7 @@ from jinja2 import Template
 from app.config import get_settings
 from app.data.fixtures_loader import appeal_templates, carc_rarc, payers
 from app.database import locked, transaction
+from app.utils.time import get_demo_today
 
 
 _CARC_LOOKUP = {c["code"]: c for c in carc_rarc()["carc"]}
@@ -96,7 +97,7 @@ def render_appeal_letter(
     payer = next((p for p in payers() if p["payer_id"] == claim_data.get("payer_id")), None)
     corrected_bullets = claim_data.get("corrected_codes_text") or "- (See corrected claim submission attached)"
     ctx = {
-        "today": date.today().isoformat(),
+        "today": get_demo_today().isoformat(),
         "payer_name": payer["payer_name"] if payer else "Payer",
         "payer_address": "Appeals Department\nP.O. Box 1234\nAnytown, USA",
         "patient_name": claim_data.get("patient_name", "Patient"),
@@ -136,7 +137,7 @@ async def submit_appeal(denial_id: str, appeal_letter_text: str) -> dict[str, An
     if not payer_row:
         return {"success": False, "reason": "claim not found"}
     payer = next((p for p in payers() if p["payer_id"] == payer_row[0]), None)
-    x12 = payer["payer_id_x12"] if payer else payer_row[0]
+    x12 = payer["payer_id_x12_fictional"] if payer else payer_row[0]
     url = f"{get_settings().mock_payer_base_url.rstrip('/')}/payer/{x12}/appeal/submit"
     async with httpx.AsyncClient(timeout=5.0) as client:
         resp = await client.post(
@@ -149,7 +150,44 @@ async def submit_appeal(denial_id: str, appeal_letter_text: str) -> dict[str, An
             """UPDATE denials SET appeal_letter_text = ?, appeal_submitted_at = ? WHERE denial_id = ?""",
             (appeal_letter_text, datetime.utcnow(), denial_id),
         )
+        # Appeal state is derived from appeal_submitted_at; claim_status stays 'Denied'
         c.execute(
-            "UPDATE claims SET claim_status = 'Appealed' WHERE claim_id = ?", (claim_id,)
+            "UPDATE claims SET appeal_submitted_at = ? WHERE claim_id = ?",
+            (datetime.utcnow(), claim_id),
         )
     return {"success": True, "case_number": body.get("case_number")}
+
+
+def self_review_appeal_letter(letter_text: str, claim_context: dict) -> dict:
+    """Perform a rule-based self-review of the appeal letter before submission.
+
+    Returns {"passes": bool, "confidence": float, "failed_checks": list[str], "notes": str}.
+    This is a synchronous best-effort check — the LLM-based review runs in the denial agent
+    using the appeal_critic prompt when the API is available.
+    """
+    failed: list[str] = []
+
+    if "Appeals Department" not in letter_text:
+        failed.append("Missing payer Appeals Department address")
+
+    claim_id = claim_context.get("claim_id", "")
+    if claim_id and claim_id not in letter_text:
+        failed.append(f"Claim reference {claim_id} not found in letter")
+
+    clinical_keywords = ["medical record", "clinical", "documentation", "diagnosis", "procedure",
+                         "treatment", "patient", "service"]
+    if sum(1 for kw in clinical_keywords if kw.lower() in letter_text.lower()) < 2:
+        failed.append("Insufficient clinical justification")
+
+    reconsideration_keywords = ["reconsideration", "appeal", "overturn", "request review"]
+    if not any(kw.lower() in letter_text.lower() for kw in reconsideration_keywords):
+        failed.append("No reconsideration demand found")
+
+    passes = len(failed) == 0
+    confidence = max(0.0, 1.0 - len(failed) * 0.2)
+    return {
+        "passes": passes,
+        "confidence": round(confidence, 2),
+        "failed_checks": failed,
+        "notes": "Rule-based pre-submission review",
+    }

@@ -37,14 +37,15 @@ def list_claims(
         rows = conn.execute(
             f"""SELECT claim_id, encounter_id, payer_id, total_billed, total_paid,
                        claim_status, submission_date, adjudication_date,
-                       rejection_reason, scrub_score
+                       rejection_reason, scrub_score, appeal_submitted_at
                   FROM claims WHERE {clause}
                   ORDER BY COALESCE(submission_date, DATE '2020-01-01') DESC
                   LIMIT ? OFFSET ?""",
             args + [page_size, offset],
         ).fetchall()
     cols = ["claim_id", "encounter_id", "payer_id", "total_billed", "total_paid",
-            "claim_status", "submission_date", "adjudication_date", "rejection_reason", "scrub_score"]
+            "claim_status", "submission_date", "adjudication_date", "rejection_reason", "scrub_score",
+            "appeal_submitted_at"]
     return {
         "total": total, "page": page, "page_size": page_size,
         "items": [dict(zip(cols, r)) for r in rows],

@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Any
 
 from app.database import locked, transaction
+from app.utils.time import get_demo_today
 
 
 def get_unposted_eras(limit: int = 25) -> list[dict[str, Any]]:
@@ -62,7 +63,7 @@ def post_payment(
     with transaction() as conn:
         conn.execute(
             """INSERT INTO payments VALUES (?,?,?,?,?,?,?,?,?)""",
-            (f"pay-{uuid.uuid4().hex[:10]}", claim_id, date.today(), payment_amount,
+            (f"pay-{uuid.uuid4().hex[:10]}", claim_id, get_demo_today(), payment_amount,
              "EFT", None, None, "Posted", False),
         )
         conn.execute(

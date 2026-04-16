@@ -9,7 +9,7 @@ See [`docs/PRD.md`](docs/PRD.md) for the full product requirements document.
 | Layer | Technology |
 |-------|------------|
 | Data | DuckDB + JSON fixtures |
-| Agents | LangGraph + Claude `claude-sonnet-4-20250514` |
+| Agents | LangGraph + Claude `claude-sonnet-4-6` (Sonnet) / `claude-opus-4-6` (reasoning agents) |
 | API | FastAPI + Pydantic v2 + SSE |
 | UI | React 18 + TypeScript + Tailwind + Recharts |
 

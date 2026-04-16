@@ -67,12 +67,15 @@
   {
     "scenario_id": "high_value_overturn",
     "name": "High-Value Denial Overturn",
-    "description": "$28,400 inpatient claim denied CO-4. Coding agent fixes; appeal auto-submitted in under 90 seconds.",
+    "description": "$28,400 inpatient claim denied CO-11 (Dx inconsistent with procedure). Coding agent reviews clinical note and corrects primary Dx from R07.9 to I21.4 (NSTEMI); appeal auto-submitted.",
     "inject": {
       "type": "high_value_denial",
-      "carc_code": "CO-4",
-      "amount": 28400.00
+      "carc_code": "CO-11",
+      "amount": 28400.00,
+      "denial_category": "Coding / DX",
+      "original_primary_dx": "R07.9",
+      "corrected_primary_dx": "I21.4"
     },
-    "expected_outcome": "denial_agent classifies -> coding_agent corrects -> appeal submitted"
+    "expected_outcome": "denial_agent classifies as Coding/DX -> coding_agent corrects primary Dx to I21.4 -> appeal submitted"
   }
 ]

@@ -33,7 +33,7 @@ def _seed(_tmp_db) -> None:
     for p in payers():
         conn.execute(
             """INSERT OR REPLACE INTO payers VALUES (?,?,?,?,?,?,?,?,?)""",
-            (p["payer_id"], p["payer_name"], p["payer_type"], p["payer_id_x12"],
+            (p["payer_id"], p["payer_name"], p["payer_type"], p["payer_id_x12_fictional"],
              p["avg_days_to_pay"], p["denial_rate_baseline"], p["timely_filing_days"],
              p["fee_schedule_multiplier"], p["portal_mock_url"]),
         )

@@ -12,14 +12,14 @@ def get_patient_demographics(patient_id: str) -> dict[str, Any]:
     with locked() as conn:
         row = conn.execute(
             """SELECT patient_id, first_name, last_name, dob, gender, address_line1,
-                      city, state, zip_code, phone, email, mrn, language_pref
+                      city, state, zip_code, phone, email, mrn, language_pref, is_self_pay
                  FROM patients WHERE patient_id = ?""",
             (patient_id,),
         ).fetchone()
     if not row:
         return {}
     cols = ["patient_id", "first_name", "last_name", "dob", "gender", "address_line1",
-            "city", "state", "zip_code", "phone", "email", "mrn", "language_pref"]
+            "city", "state", "zip_code", "phone", "email", "mrn", "language_pref", "is_self_pay"]
     return dict(zip(cols, row))
 
 

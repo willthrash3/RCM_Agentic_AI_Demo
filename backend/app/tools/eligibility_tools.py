@@ -21,7 +21,7 @@ def _base() -> str:
 
 async def query_payer_eligibility(patient_id: str, payer_id: str, service_date: str) -> dict[str, Any]:
     payer_lookup = next((p for p in payers() if p["payer_id"] == payer_id), None)
-    x12 = payer_lookup["payer_id_x12"] if payer_lookup else payer_id
+    x12 = payer_lookup["payer_id_x12_fictional"] if payer_lookup else payer_id
     url = f"{_base()}/payer/{x12}/eligibility"
     async with httpx.AsyncClient(timeout=5.0) as client:
         resp = await client.get(

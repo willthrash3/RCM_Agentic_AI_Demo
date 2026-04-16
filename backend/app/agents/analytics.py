@@ -13,6 +13,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from app.agents.base import BaseAgent
+from app.utils.time import get_demo_today
 from app.agents.event_bus import emit
 from app.database import locked
 from app.models.agent import AgentInput, AgentOutput
@@ -67,9 +68,9 @@ class AnalyticsAgent(BaseAgent):
             if metric == "denial_rate":
                 row = conn.execute(
                     """SELECT COUNT(*) FILTER (WHERE claim_status = 'Denied')::DOUBLE /
-                              NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied','Appealed')), 0)
+                              NULLIF(COUNT(*) FILTER (WHERE claim_status IN ('Submitted','Paid','Denied')), 0)
                          FROM claims WHERE submission_date >= ?""",
-                    (date.today() - timedelta(days=30),),
+                    (get_demo_today() - timedelta(days=30),),
                 ).fetchone()
                 return float(row[0]) if row and row[0] else 0.0
             if metric == "net_collection_rate":
@@ -77,7 +78,7 @@ class AnalyticsAgent(BaseAgent):
                     """SELECT SUM(total_paid)::DOUBLE /
                               NULLIF(SUM(total_billed - COALESCE(total_allowed, 0) * 0.0), 0)
                          FROM claims WHERE submission_date >= ?""",
-                    (date.today() - timedelta(days=30),),
+                    (get_demo_today() - timedelta(days=30),),
                 ).fetchone()
                 v = float(row[0]) if row and row[0] else 0.0
                 return min(1.0, v)
@@ -92,7 +93,7 @@ class AnalyticsAgent(BaseAgent):
                 row = conn.execute(
                     """SELECT AVG(charge_lag_days)::DOUBLE FROM encounters
                         WHERE service_date >= ?""",
-                    (date.today() - timedelta(days=30),),
+                    (get_demo_today() - timedelta(days=30),),
                 ).fetchone()
                 return float(row[0]) if row and row[0] else 0.0
             if metric == "appeal_overturn_rate":

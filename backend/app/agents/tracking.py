@@ -10,6 +10,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from app.agents.base import BaseAgent
+from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
 from app.tools.claim_tools import (
     get_contract_allowable,
@@ -74,7 +75,7 @@ class TrackingAgent(BaseAgent):
 
             # TF risk
             if cl.get("submission_date"):
-                days_since = (date.today() - cl["submission_date"]).days
+                days_since = (get_demo_today() - cl["submission_date"]).days
                 if days_since > 25:
                     tf_risks += 1
 

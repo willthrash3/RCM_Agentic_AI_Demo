@@ -27,7 +27,8 @@ DDL_STATEMENTS: list[str] = [
         secondary_payer_id VARCHAR,
         propensity_score DOUBLE,
         language_pref VARCHAR,
-        created_at TIMESTAMP
+        created_at TIMESTAMP,
+        is_self_pay BOOLEAN DEFAULT FALSE
     );
     """,
     # Payers --------------------------------------------------------------
@@ -36,7 +37,7 @@ DDL_STATEMENTS: list[str] = [
         payer_id VARCHAR PRIMARY KEY,
         payer_name VARCHAR,
         payer_type VARCHAR,
-        payer_id_x12 VARCHAR,
+        payer_id_x12_fictional VARCHAR,
         avg_days_to_pay INTEGER,
         denial_rate_baseline DOUBLE,
         timely_filing_days INTEGER,
@@ -78,7 +79,7 @@ DDL_STATEMENTS: list[str] = [
         patient_responsibility DECIMAL(10,2),
         submission_date DATE,
         adjudication_date DATE,
-        claim_status VARCHAR,
+        claim_status VARCHAR,  -- valid values: Draft, Submitted, Accepted, Denied, Paid
         rejection_reason VARCHAR,
         timely_filing_deadline DATE,
         scrub_score DOUBLE,

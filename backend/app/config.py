@@ -8,7 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     anthropic_api_key: str = ""
-    claude_model: str = "claude-sonnet-4-20250514"
+    claude_model: str = "claude-sonnet-4-6"
+    claude_model_reasoning: str = "claude-opus-4-6"
     demo_api_key: str = "demo-key-12345"
     database_path: str = "./data/rcm_demo.duckdb"
     seed_random_seed: int = 42
@@ -23,6 +24,10 @@ class Settings(BaseSettings):
     # Demo-only: when true, agents use scripted responses instead of calling the LLM.
     # Useful for CI and for running the demo without an Anthropic API key.
     agent_offline_mode: bool = False
+
+    # LLM response cache: off | record | replay
+    llm_cache_mode: str = "off"
+    llm_cache_dir: str = "./data/llm_cache"
 
     model_config = SettingsConfigDict(
         env_file=[".env", "../.env"],

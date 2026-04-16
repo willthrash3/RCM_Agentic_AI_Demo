@@ -1,6 +1,6 @@
 """Coding Agent — reads SOAP notes, suggests CPT/ICD-10 with confidence.
 
-Auto-approve rule (PRD §4.2): overall_confidence >= 0.95 AND no documentation_gaps
+Auto-approve rule (PRD §4.2): overall_confidence >= 0.90 AND no documentation_gaps
 AND validation passes → drop the charge; else route to coder review.
 """
 
@@ -94,6 +94,7 @@ class CodingAgent(BaseAgent):
             entity_type="encounter",
             entity_id=encounter_id,
             fallback=fallback,
+            model=self.settings.claude_model_reasoning,
         )
 
         cpt_list = [decision.get("primary_cpt", {}).get("code")]
@@ -110,7 +111,7 @@ class CodingAgent(BaseAgent):
 
         confidence = float(decision.get("overall_confidence", 0.80))
         gaps = decision.get("documentation_gaps") or []
-        auto_approve = confidence >= 0.95 and not gaps and validation["valid"]
+        auto_approve = confidence >= 0.90 and not gaps and validation["valid"]
 
         write_coding_suggestion(encounter_id, decision, confidence,
                                 decision.get("_reasoning", ""))
@@ -123,7 +124,7 @@ class CodingAgent(BaseAgent):
             hitl_reason = (
                 "Documentation gaps" if gaps
                 else "Validation errors" if not validation["valid"]
-                else "Confidence below 0.95"
+                else "Confidence below 0.90"
             )
             await self.create_hitl_task(
                 "encounter", encounter_id,

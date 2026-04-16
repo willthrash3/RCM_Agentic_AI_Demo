@@ -15,6 +15,7 @@ from decimal import Decimal
 from app.agents.event_bus import emit
 from app.data.fixtures_loader import scenarios as load_scenarios
 from app.database import locked, transaction
+from app.utils.time import get_demo_today
 
 
 async def run_scenario(scenario_id: str) -> dict:
@@ -49,8 +50,8 @@ async def run_scenario(scenario_id: str) -> dict:
                     c.execute(
                         """INSERT INTO denials VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (denial_id, claim_id, inject["carc_code"], inject.get("rarc_code"),
-                         inject["denial_category"], date.today(),
-                         date.today() + timedelta(days=45),
+                         inject["denial_category"], get_demo_today(),
+                         get_demo_today() + timedelta(days=45),
                          None, None, None, None, False),
                     )
                     affected.append(claim_id)
@@ -108,7 +109,7 @@ async def run_scenario(scenario_id: str) -> dict:
                     c.execute(
                         """INSERT INTO denials VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (denial_id, claim_id, inject["carc_code"], None, "Coding / DX",
-                         date.today(), date.today() + timedelta(days=45),
+                         get_demo_today(), get_demo_today() + timedelta(days=45),
                          None, None, None, None, False),
                     )
                     details["denial_id"] = denial_id
