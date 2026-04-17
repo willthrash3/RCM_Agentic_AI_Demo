@@ -12,7 +12,7 @@ import httpx
 
 from app.config import get_settings
 from app.data.fixtures_loader import payers
-from app.database import transaction
+from app.database import locked, transaction
 
 
 def _base() -> str:
@@ -49,6 +49,27 @@ def write_eligibility_result(patient_id: str, payer_id: str, result: dict[str, A
 
 
 def flag_missing_info(patient_id: str, fields: list[str]) -> None:
-    # For the demo we just log the fact via event emission at the agent level.
-    # No separate persistent record needed.
-    return None
+    with locked() as conn:
+        existing = conn.execute(
+            """SELECT 1 FROM hitl_tasks
+                WHERE entity_id = ? AND agent_name = 'eligibility_agent'
+                  AND task_description LIKE 'Missing patient%' AND status = 'pending'
+                LIMIT 1""",
+            (patient_id,),
+        ).fetchone()
+    if existing:
+        return
+    task_id = f"hitl-{uuid.uuid4().hex[:10]}"
+    with transaction() as conn:
+        conn.execute(
+            """INSERT INTO hitl_tasks
+                   (task_id, agent_name, entity_type, entity_id, task_description,
+                    priority, recommended_action, agent_reasoning, status, created_at,
+                    resolved_at, decision, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (task_id, "eligibility_agent", "patient", patient_id,
+             f"Missing patient information: {', '.join(fields)}",
+             "High", "Collect missing fields at next patient contact or via portal",
+             f"Required fields not present in 271 or demographics: {fields}",
+             "pending", datetime.utcnow(), None, None, None),
+        )

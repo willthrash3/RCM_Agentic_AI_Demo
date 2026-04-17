@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -76,8 +76,27 @@ def post_payment(
 
 def create_patient_statement(patient_id: str, claim_id: str, balance_amount: Decimal) -> str:
     statement_id = f"stmt-{uuid.uuid4().hex[:8]}"
+    with transaction() as conn:
+        conn.execute(
+            """INSERT INTO hitl_tasks
+                   (task_id, agent_name, entity_type, entity_id, task_description,
+                    priority, recommended_action, agent_reasoning, status, created_at,
+                    resolved_at, decision, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (statement_id, "era_posting_agent", "patient", patient_id,
+             f"Patient statement issued: ${balance_amount:.2f} balance due on claim {claim_id}",
+             "Low", "Send statement and offer payment plan if balance > $500",
+             f"Statement ID {statement_id}; patient balance ${balance_amount:.2f}",
+             "pending", datetime.utcnow(), None, None, None),
+        )
     return statement_id
 
 
 def route_exception(era_id: str, line_id: str | None, reason: str) -> None:
-    return None
+    exception_id = f"pay-{uuid.uuid4().hex[:10]}"
+    with transaction() as conn:
+        conn.execute(
+            """INSERT INTO payments VALUES (?,?,?,?,?,?,?,?,?)""",
+            (exception_id, line_id, get_demo_today(), Decimal("0.00"),
+             "Exception", era_id, None, f"Exception: {reason}", True),
+        )

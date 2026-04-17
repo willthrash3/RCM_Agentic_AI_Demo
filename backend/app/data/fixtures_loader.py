@@ -38,8 +38,30 @@ def soap_templates() -> list[dict]:
     return load_fixture("soap_note_templates")
 
 
+_runtime_rules: dict[str, list] = {}
+
+
+def inject_payer_rule(payer_id: str, rule: dict) -> None:
+    """Overlay a runtime edit rule so agents see it without modifying fixture files."""
+    _runtime_rules.setdefault(payer_id, [])
+    _runtime_rules[payer_id] = [
+        r for r in _runtime_rules[payer_id] if r.get("rule_id") != rule.get("rule_id")
+    ]
+    _runtime_rules[payer_id].append(rule)
+
+
+def clear_runtime_rules() -> None:
+    _runtime_rules.clear()
+
+
 def payer_edit_rules() -> dict:
-    return load_fixture("payer_edit_rules")
+    base = load_fixture("payer_edit_rules")
+    if not _runtime_rules:
+        return base
+    merged = dict(base)
+    for payer_id, rules in _runtime_rules.items():
+        merged[payer_id] = merged.get(payer_id, []) + rules
+    return merged
 
 
 def appeal_templates() -> dict:

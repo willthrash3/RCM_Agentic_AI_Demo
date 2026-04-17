@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -150,13 +151,51 @@ def get_contract_allowable(cpt_code: str, payer_id: str) -> Decimal:
     return Decimal(str(round(cpt["base_charge"] * payer["fee_schedule_multiplier"] * 0.75, 2)))
 
 
-def flag_underpayment(claim_id: str, expected: Decimal, actual: Decimal, variance_pct: float) -> None:
-    # In the demo we surface via events / HITL; no dedicated underpayment table is needed.
-    return None
+def flag_underpayment(claim_id: str, expected: Decimal, actual: Decimal, variance_pct: float) -> str:
+    task_id = f"hitl-{uuid.uuid4().hex[:10]}"
+    with transaction() as conn:
+        conn.execute(
+            """INSERT INTO hitl_tasks
+                   (task_id, agent_name, entity_type, entity_id, task_description,
+                    priority, recommended_action, agent_reasoning, status, created_at,
+                    resolved_at, decision, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (task_id, "tracking_agent", "claim", claim_id,
+             f"Potential underpayment: ${expected - actual:.2f} below contract allowable",
+             "Medium", "Review payer contract and file short-pay appeal if justified",
+             f"Expected ${expected:.2f}, received ${actual:.2f} ({variance_pct:.1%} variance)",
+             "pending", datetime.utcnow(), None, None, None),
+        )
+    return task_id
 
 
-def flag_timely_filing_risk(claim_id: str, days_remaining: int) -> None:
-    return None
+def flag_timely_filing_risk(claim_id: str, days_remaining: int) -> str:
+    with locked() as conn:
+        existing = conn.execute(
+            """SELECT task_id FROM hitl_tasks
+                WHERE entity_id = ? AND agent_name = 'tracking_agent'
+                  AND task_description LIKE 'Timely filing%' AND status = 'pending'
+                LIMIT 1""",
+            (claim_id,),
+        ).fetchone()
+    if existing:
+        return existing[0]
+    task_id = f"hitl-{uuid.uuid4().hex[:10]}"
+    priority = "High" if days_remaining < 7 else "Medium"
+    with transaction() as conn:
+        conn.execute(
+            """INSERT INTO hitl_tasks
+                   (task_id, agent_name, entity_type, entity_id, task_description,
+                    priority, recommended_action, agent_reasoning, status, created_at,
+                    resolved_at, decision, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (task_id, "tracking_agent", "claim", claim_id,
+             f"Timely filing risk: {days_remaining} days remaining before deadline",
+             priority, "Submit or escalate immediately to avoid timely filing denial",
+             f"{days_remaining} days left before timely filing deadline",
+             "pending", datetime.utcnow(), None, None, None),
+        )
+    return task_id
 
 
 def update_claim_status(claim_id: str, new_status: str) -> None:

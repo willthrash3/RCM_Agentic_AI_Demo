@@ -12,7 +12,10 @@ from decimal import Decimal
 from app.agents.base import BaseAgent
 from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
+from app.agents.event_bus import emit
 from app.tools.claim_tools import (
+    flag_timely_filing_risk,
+    flag_underpayment,
     get_contract_allowable,
     get_submitted_claims,
     query_payer_claim_status,
@@ -65,12 +68,15 @@ class TrackingAgent(BaseAgent):
                     if (allowable > 0 and (total_billed / allowable) < Decimal("0.95")
                             and variance > Decimal("25")):
                         underpayments += 1
-                        await self.create_hitl_task(
-                            "claim", cl["claim_id"],
-                            f"Potential underpayment: ${variance:.2f} below contract allowable",
-                            "Medium",
-                            "Review payer contract and file short-pay appeal if justified",
-                            f"Contract allowable ${allowable} vs billed ${total_billed}",
+                        variance_pct = float(variance / allowable)
+                        htid = flag_underpayment(cl["claim_id"], allowable, total_billed, variance_pct)
+                        await emit(
+                            "hitl.task_created",
+                            agent_name=self.name,
+                            entity_type="claim", entity_id=cl["claim_id"],
+                            data={"task_id": htid, "priority": "Medium",
+                                  "description": f"Potential underpayment: ${variance:.2f}"},
+                            task_id=self.task_id,
                         )
 
             # TF risk
@@ -78,6 +84,8 @@ class TrackingAgent(BaseAgent):
                 days_since = (get_demo_today() - cl["submission_date"]).days
                 if days_since > 25:
                     tf_risks += 1
+                    days_remaining = max(0, 90 - days_since)
+                    flag_timely_filing_risk(cl["claim_id"], days_remaining)
 
         decision = await self.call_llm(
             system=SYSTEM,

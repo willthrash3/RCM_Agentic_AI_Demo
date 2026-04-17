@@ -14,7 +14,7 @@ from datetime import date
 from app.agents.base import BaseAgent
 from app.utils.time import get_demo_today
 from app.models.agent import AgentInput, AgentOutput
-from app.tools.eligibility_tools import query_payer_eligibility, write_eligibility_result
+from app.tools.eligibility_tools import flag_missing_info, query_payer_eligibility, write_eligibility_result
 from app.tools.patient_tools import get_patient_demographics, get_patient_insurance
 
 
@@ -140,6 +140,14 @@ class EligibilityAgent(BaseAgent):
 
         escalate = bool(decision.get("escalate"))
         fc_flag = bool(decision.get("financial_counseling_flag"))
+
+        missing: list[str] = []
+        if not response_271.get("plan_type") or response_271.get("plan_type") == "Unknown":
+            missing.append("plan_type")
+        if decision.get("cob_uncertain"):
+            missing.append("cob_order")
+        if missing:
+            flag_missing_info(patient_id, missing)
 
         if escalate:
             await self.create_hitl_task(

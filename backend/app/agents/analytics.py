@@ -76,7 +76,7 @@ class AnalyticsAgent(BaseAgent):
             if metric == "net_collection_rate":
                 row = conn.execute(
                     """SELECT SUM(total_paid)::DOUBLE /
-                              NULLIF(SUM(total_billed - COALESCE(total_allowed, 0) * 0.0), 0)
+                              NULLIF(SUM(total_billed - COALESCE(total_allowed, 0) * 1.0), 0)
                          FROM claims WHERE submission_date >= ?""",
                     (get_demo_today() - timedelta(days=30),),
                 ).fetchone()

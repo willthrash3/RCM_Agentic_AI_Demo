@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import require_api_key
-from app.data.fixtures_loader import scenarios as load_scenarios
+from app.data.fixtures_loader import clear_runtime_rules, scenarios as load_scenarios
 from app.database import locked
 from app.db_schema import init_schema, reset_all_tables
 from app.orchestrator.scenarios import run_scenario
@@ -41,6 +41,7 @@ async def run(payload: dict) -> dict:
 def reset() -> dict:
     """Reset DB back to seed state. PRD §10.2: <10s."""
     from scripts.seed_all import main as seed_main
+    clear_runtime_rules()
     with locked() as conn:
         init_schema(conn)
         reset_all_tables(conn)

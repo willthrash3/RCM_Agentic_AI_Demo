@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from app.agents.event_bus import emit
-from app.data.fixtures_loader import scenarios as load_scenarios
+from app.data.fixtures_loader import inject_payer_rule, scenarios as load_scenarios
 from app.database import locked, transaction
 from app.utils.time import get_demo_today
 
@@ -31,7 +31,21 @@ async def run_scenario(scenario_id: str) -> dict:
 
     with locked() as conn:
         if kind == "add_edit_rule":
-            details["rule"] = inject["rule"]
+            rule = inject["rule"]
+            details["rule"] = rule
+            inject_payer_rule(inject["payer_id"], rule)
+            placeholders = ",".join("?" * len(rule["requires_dx_in"]))
+            rows = conn.execute(
+                f"""SELECT DISTINCT c.claim_id FROM claims c
+                      JOIN claim_lines l ON c.claim_id = l.claim_id
+                     WHERE c.payer_id = ?
+                       AND l.cpt_code = ?
+                       AND l.icd10_primary NOT IN ({placeholders})
+                       AND c.claim_status IN ('Submitted', 'Draft')""",
+                (inject["payer_id"], rule["cpt"], *rule["requires_dx_in"]),
+            ).fetchall()
+            for (claim_id,) in rows:
+                affected.append(claim_id)
         elif kind == "bulk_deny":
             fraction = inject["fraction"]
             rows = conn.execute(

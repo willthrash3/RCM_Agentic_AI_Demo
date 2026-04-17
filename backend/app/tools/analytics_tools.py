@@ -70,8 +70,17 @@ def get_kpi_timeseries(metric: str, days_back: int = 30) -> list[dict[str, Any]]
                 ).fetchone()
                 value = float(row[0]) if row and row[0] else 0.0
             elif metric == "cash_forecast":
-                # Forward-looking: use historical avg_days_to_pay trend
-                value = 0.0
+                row = conn.execute(
+                    """SELECT SUM(total_billed - COALESCE(total_paid, 0)) * 0.96 /
+                              NULLIF((SELECT AVG(DATEDIFF('day', submission_date, adjudication_date))
+                                        FROM claims
+                                       WHERE adjudication_date IS NOT NULL
+                                         AND submission_date IS NOT NULL), 0)
+                         FROM claims WHERE claim_status IN ('Submitted', 'Paid')
+                           AND submission_date <= ?""",
+                    (d,),
+                ).fetchone()
+                value = float(row[0]) if row and row[0] else 0.0
             else:
                 value = 0.0
             points.append({"date": str(d), "value": round(value, 4)})

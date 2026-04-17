@@ -14,9 +14,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _cache_dir() -> Path:
@@ -54,5 +57,5 @@ def put_cached(model: str, system: str, user: str, response: dict[str, Any]) -> 
     path = _cache_dir() / f"{key}.json"
     try:
         path.write_text(json.dumps(response, default=str, indent=2), encoding="utf-8")
-    except Exception:
-        pass  # Cache write failure is non-fatal
+    except Exception as exc:
+        logger.warning("LLM cache write failed for %s: %s", path, exc)
