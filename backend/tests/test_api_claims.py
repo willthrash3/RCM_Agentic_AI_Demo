@@ -2,6 +2,32 @@
 
 from __future__ import annotations
 
+import pytest
+from datetime import date
+
+
+@pytest.fixture(scope="module", autouse=True)
+def seed_claim_rows(_seed):
+    from app.database import get_connection
+    conn = get_connection()
+    conn.execute(
+        """INSERT OR REPLACE INTO encounters VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        ("enc-test-1", "pt-test-1", "1234567890", "0987654321", "Outpatient",
+         date(2026, 4, 1), date(2026, 4, 1), "11", "Dr. Test", "HTN", "note", "htn_mgmt",
+         False, "Not Required", 1, "Coded"),
+    )
+    conn.execute(
+        """INSERT OR REPLACE INTO claims VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        ("clm-test-1", "enc-test-1", "837P", "payer-001", 200, 150, 120, 30,
+         None, None, "Draft", None, None, None, None, False),
+    )
+    conn.execute(
+        """INSERT OR REPLACE INTO claim_lines VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        ("line-test-1", "clm-test-1", "99214", "I10", None, None, 1, 200, 150,
+         None, None, None),
+    )
+
+
 def test_list_claims_ok(api_client, auth_headers):
     r = api_client.get("/api/v1/claims", headers=auth_headers)
     assert r.status_code == 200
