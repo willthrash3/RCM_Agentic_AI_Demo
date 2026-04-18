@@ -2,7 +2,7 @@ import AgentTraceFeed from '../components/AgentTraceFeed';
 import { useSSE } from '../hooks/useSSE';
 
 export default function AgentTrace() {
-  const { events, connected } = useSSE();
+  const { events, connected } = useSSE(undefined, true);
   const byAgent: Record<string, number> = {};
   for (const e of events) byAgent[e.agent_name] = (byAgent[e.agent_name] || 0) + 1;
   const lastCompleted = [...events].reverse().find((e) => e.event_type === 'agent.completed');

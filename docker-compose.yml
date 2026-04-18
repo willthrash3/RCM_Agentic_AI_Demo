@@ -15,6 +15,12 @@ services:
     command: >
       sh -c "python scripts/seed_all.py &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 120s
 
   frontend:
     build:
@@ -29,7 +35,8 @@ services:
     volumes:
       - ./frontend/src:/app/src
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   backend_data:

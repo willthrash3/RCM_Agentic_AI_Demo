@@ -118,5 +118,13 @@
     "expected_primary_icd10": "R07.9",
     "additional_icd10": ["I10"],
     "soap_note_text": "S: {patient_name}, {age} y/o {gender} to ED with 2 hours substernal chest pain, pressure-like, 6/10, worse with exertion, not relieved by rest. H/o HTN. No prior CAD.\nO: VS: BP 172/98, HR 94, SpO2 98%. Anxious-appearing. Heart RRR, no murmurs. Lungs clear. ECG: NSR, no acute ischemic changes. Initial troponin negative.\nA: Chest pain, rule out ACS; hypertensive urgency.\nP: ASA 324, NTG SL. Serial troponins x3. Cardiac monitor. Labetalol IV for BP. Cardiology consult. High-complexity ED MDM."
+  },
+  {
+    "scenario_id": "chf_complex_fu",
+    "clinical_label": "Complex CHF follow-up",
+    "expected_cpt": "99215",
+    "expected_primary_icd10": "I50.32",
+    "additional_icd10": ["I10", "E11.65", "N18.3"],
+    "soap_note_text": "S: {patient_name}, {age} y/o {gender} with chronic systolic CHF (EF 30%), HTN, T2DM, and CKD stage 3 presents for follow-up. Reports 4 lbs weight gain over 3 days, increased lower extremity edema, worsening exertional dyspnea (2 flights → 1 flight). Adherent to carvedilol, lisinopril, furosemide 40 mg. Low-sodium diet; admits dietary indiscretion over weekend. No chest pain, no orthopnea change.\nO: VS: BP 148/92, HR 86, SpO2 94% RA, wt 192 lbs (up from 188 last visit). JVD present at 45°. Bibasilar crackles to mid-lung fields. 2+ pitting edema bilateral lower extremities to knees. BMP today: Cr 1.8 (baseline 1.6), BNP 880 (up from 420).\nA: 1) Chronic systolic CHF, acutely decompensated; 2) HTN, elevated; 3) T2DM, stable; 4) CKD stage 3, acute-on-chronic.\nP: Increase furosemide to 80 mg daily x 7 days with daily weights; call if >2 lbs/day gain. Sodium restriction reinforced. Renal function recheck in 5 days. Cardiology loop-in for possible ICD candidacy. Dietitian referral placed. 50 min face-to-face; high-complexity MDM with independent interpretation of BMP and BNP."
   }
 ]

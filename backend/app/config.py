@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     mock_payer_base_url: str = "http://localhost:8000/mock"
     mock_payer_latency_ms: int = 150
     mock_payer_error_rate: float = 0.02
-    agent_temperature: float = 0.0
     agent_max_tokens: int = 2048
     sse_keepalive_interval: int = 15
     log_level: str = "INFO"

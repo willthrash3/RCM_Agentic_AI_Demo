@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { apiBase } from '../api/client';
+import { api, apiBase } from '../api/client';
 
 export interface AgentEvent {
   event_id: string;
@@ -16,10 +16,22 @@ export interface AgentEvent {
  * Subscribe to the SSE stream of agent events.
  * Auto-reconnects after 5s on drop (PRD §10.2).
  */
-export function useSSE(filter?: { task_id?: string; entity_type?: string; entity_id?: string }) {
+export function useSSE(
+  filter?: { task_id?: string; entity_type?: string; entity_id?: string },
+  loadHistory = false,
+) {
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const esRef = useRef<EventSource | null>(null);
+  const seenIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!loadHistory) return;
+    api<AgentEvent[]>('/events/recent').then((history) => {
+      setEvents(history);
+      for (const e of history) seenIds.current.add(e.event_id);
+    }).catch(() => {});
+  }, [loadHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +49,9 @@ export function useSSE(filter?: { task_id?: string; entity_type?: string; entity
       const handler = (evt: MessageEvent) => {
         try {
           const ae = JSON.parse(evt.data) as AgentEvent;
-          setEvents((prev) => [...prev.slice(-199), ae]);
+          if (seenIds.current.has(ae.event_id)) return;
+          seenIds.current.add(ae.event_id);
+          setEvents((prev) => [...prev.slice(-499), ae]);
         } catch {
           /* keepalive */
         }

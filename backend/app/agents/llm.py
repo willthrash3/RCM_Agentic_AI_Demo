@@ -60,7 +60,6 @@ async def run_llm(
     user: str,
     fallback: dict | None = None,
     max_tokens: int | None = None,
-    temperature: float | None = None,
     model: str | None = None,
 ) -> dict[str, Any]:
     settings = get_settings()
@@ -80,7 +79,6 @@ async def run_llm(
         resp = await client.messages.create(
             model=effective_model,
             max_tokens=max_tokens or settings.agent_max_tokens,
-            temperature=settings.agent_temperature if temperature is None else temperature,
             system=system + "\n\nRespond ONLY with valid JSON matching the requested schema.",
             messages=[{"role": "user", "content": user}],
         )

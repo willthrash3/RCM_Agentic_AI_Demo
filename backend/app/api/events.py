@@ -64,15 +64,31 @@ async def stream(
 
 
 @router.get("/events/recent")
-def recent_events(limit: int = 100) -> list[dict]:
+def recent_events(limit: int = 200) -> list[dict]:
     with locked() as conn:
         rows = conn.execute(
             """SELECT event_id, task_id, agent_name, action_type, entity_type,
                       entity_id, reasoning_trace, confidence, hitl_required, created_at
                  FROM agent_event_log
-                ORDER BY created_at DESC LIMIT ?""",
+                ORDER BY created_at ASC LIMIT ?""",
             (limit,),
         ).fetchall()
-    cols = ["event_id", "task_id", "agent_name", "action_type", "entity_type",
-            "entity_id", "reasoning_trace", "confidence", "hitl_required", "created_at"]
-    return [dict(zip(cols, r)) for r in rows]
+    result = []
+    for row in rows:
+        event_id, task_id, agent_name, action_type, entity_type, entity_id, \
+            reasoning_trace, confidence, hitl_required, created_at = row
+        result.append({
+            "event_id": event_id,
+            "event_type": action_type,
+            "agent_name": agent_name,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "task_id": task_id,
+            "data": {
+                "reasoning": reasoning_trace or "",
+                "confidence": confidence,
+                "hitl_required": bool(hitl_required),
+            },
+            "timestamp": created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at),
+        })
+    return result
