@@ -248,15 +248,7 @@ DDL_STATEMENTS: list[str] = [
 
 
 def init_schema(conn: duckdb.DuckDBPyConnection) -> None:
-    """Drop and recreate all tables to ensure schema is always current."""
-    tables = [
-        "agent_event_log", "hitl_tasks", "kpi_alerts", "agent_tasks",
-        "ar_aging_snapshot", "payments", "denials", "prior_auths",
-        "eligibility_responses", "claim_lines", "claims", "encounters",
-        "patients", "payers",
-    ]
-    for table in tables:
-        conn.execute(f"DROP TABLE IF EXISTS {table};")
+    """Create tables if they don't already exist (idempotent, non-destructive)."""
     for stmt in DDL_STATEMENTS:
         conn.execute(stmt)
 
