@@ -25,12 +25,26 @@ export default function ClaimDetail() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['claim', claimId] }),
   });
 
+  const runCoding = useMutation({
+    mutationFn: () => api<any>('/agents/coding/run', {
+      method: 'POST', body: JSON.stringify({ encounter_id: data?.encounter_id }),
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['claim', claimId] }),
+  });
+
   if (!data) return <div className="p-6">Loading…</div>;
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Claim {data.claim_id}</h1>
         <div className="flex gap-2">
+          <button
+            className="px-3 py-1.5 bg-violet-600 text-white text-sm rounded hover:bg-violet-700 disabled:opacity-50"
+            onClick={() => runCoding.mutate()}
+            disabled={runCoding.isPending || !data.encounter_id}
+          >
+            Run Coding Agent
+          </button>
           <button
             className="px-3 py-1.5 bg-envblue text-white text-sm rounded hover:bg-blue-700"
             onClick={() => runScrub.mutate()}

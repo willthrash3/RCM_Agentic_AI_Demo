@@ -21,6 +21,11 @@ export default function PatientDetail() {
     onSuccess: () => setTimeout(() => refetch(), 1500),
   });
 
+  const runCollections = useMutation({
+    mutationFn: () => api<any>('/agents/collections/run', { method: 'POST', body: '{}' }),
+    onSuccess: () => setTimeout(() => refetch(), 1500),
+  });
+
   if (!data) return <div className="p-6">Loading…</div>;
   return (
     <div className="p-6 space-y-4">
@@ -29,13 +34,22 @@ export default function PatientDetail() {
           {data.first_name} {data.last_name}{' '}
           <span className="text-slate-500 text-lg font-normal">{data.mrn}</span>
         </h1>
-        <button
-          className="px-3 py-1.5 bg-envblue text-white text-sm rounded hover:bg-blue-700"
-          onClick={() => runEligibility.mutate()}
-          disabled={runEligibility.isPending}
-        >
-          Run Eligibility Check
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="px-3 py-1.5 bg-envblue text-white text-sm rounded hover:bg-blue-700"
+            onClick={() => runEligibility.mutate()}
+            disabled={runEligibility.isPending}
+          >
+            Run Eligibility Check
+          </button>
+          <button
+            className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded hover:bg-teal-700"
+            onClick={() => runCollections.mutate()}
+            disabled={runCollections.isPending}
+          >
+            Run Collections Agent
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 text-sm">
