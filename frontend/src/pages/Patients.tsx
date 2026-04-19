@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 
 export default function Patients() {
   const [search, setSearch] = useState('');
+  const runCollections = useMutation({
+    mutationFn: () => api<any>('/agents/collections/run', { method: 'POST', body: '{}' }),
+  });
   const { data } = useQuery({
     queryKey: ['patients', search],
     queryFn: () => {
@@ -16,7 +19,17 @@ export default function Patients() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Patients</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Patients</h1>
+        <button
+          className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded hover:bg-teal-700"
+          type="button"
+          onClick={() => runCollections.mutate()}
+          disabled={runCollections.isPending}
+        >
+          {runCollections.isPending ? 'Running…' : 'Run Collections'}
+        </button>
+      </div>
 
       <input
         value={search}

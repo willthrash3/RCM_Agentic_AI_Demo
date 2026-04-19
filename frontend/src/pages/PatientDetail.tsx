@@ -21,11 +21,6 @@ export default function PatientDetail() {
     onSuccess: () => setTimeout(() => refetch(), 1500),
   });
 
-  const runCollections = useMutation({
-    mutationFn: () => api<any>('/agents/collections/run', { method: 'POST', body: '{}' }),
-    onSuccess: () => setTimeout(() => refetch(), 1500),
-  });
-
   if (!data) return <div className="p-6">Loading…</div>;
   return (
     <div className="p-6 space-y-4">
@@ -41,14 +36,6 @@ export default function PatientDetail() {
             disabled={runEligibility.isPending}
           >
             Run Eligibility Check
-          </button>
-          <button
-            className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded hover:bg-teal-700"
-            onClick={() => runCollections.mutate()}
-            disabled={runCollections.isPending}
-            title="Runs the collections agent across all patient balances — not scoped to this patient"
-          >
-            Run Collections (all patients)
           </button>
         </div>
       </div>
