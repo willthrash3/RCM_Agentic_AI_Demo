@@ -46,8 +46,9 @@ export default function PatientDetail() {
             className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded hover:bg-teal-700"
             onClick={() => runCollections.mutate()}
             disabled={runCollections.isPending}
+            title="Runs the collections agent across all patient balances — not scoped to this patient"
           >
-            Run Collections Agent
+            Run Collections (all patients)
           </button>
         </div>
       </div>

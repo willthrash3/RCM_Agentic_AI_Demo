@@ -8,8 +8,20 @@ import { useSSE } from '../hooks/useSSE';
 
 type BriefingStep = {
   label: string;
-  run: () => Promise<unknown>;
+  run: () => Promise<{ task_id: string }>;
 };
+
+const TERMINAL_TASK_STATUSES = new Set(['complete', 'escalated', 'failed']);
+
+async function waitForTask(taskId: string, timeoutMs = 30_000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const task = await api<{ status: string }>(`/agents/tasks/${taskId}`);
+    if (TERMINAL_TASK_STATUSES.has(task.status)) return;
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  throw new Error(`Task ${taskId} did not reach a terminal status within ${timeoutMs}ms`);
+}
 
 interface DashboardResponse {
   as_of: string;
@@ -43,86 +55,88 @@ export default function Dashboard() {
   const { events } = useSSE();
 
   const [briefingStep, setBriefingStep] = useState<string | null>(null);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
 
   const runTracking = useMutation({
-    mutationFn: () => api('/agents/tracking/run', { method: 'POST', body: '{}' }),
+    mutationFn: () => api<{ task_id: string }>('/agents/tracking/run', { method: 'POST', body: '{}' }),
   });
   const runEra = useMutation({
-    mutationFn: () => api('/agents/era-posting/run', { method: 'POST', body: '{}' }),
+    mutationFn: () => api<{ task_id: string }>('/agents/era-posting/run', { method: 'POST', body: '{}' }),
   });
 
   const runBriefing = useMutation({
     mutationFn: async () => {
-      const pick = <T,>(items: T[]): T | undefined => items[0];
-      const patients = await api<{ items: Array<{ patient_id: string }> }>('/patients?page_size=5');
-      const openClaims = await api<{ items: Array<{ claim_id: string; encounter_id: string }> }>(
-        '/claims?status=Submitted&page_size=5',
-      );
-      const pendingDenials = await api<{ items: Array<{ denial_id: string; appeal_submitted_at: string | null }> }>(
-        '/denials?page_size=10',
-      );
+      setBriefingError(null);
+      try {
+        const pick = <T,>(items: T[]): T | undefined => items[0];
+        const patients = await api<{ items: Array<{ patient_id: string }> }>('/patients?page_size=5');
+        // Accept any claim status so the briefing reliably has a coding/scrubbing target,
+        // even if the seed currently has no Submitted claims.
+        const claims = await api<{ items: Array<{ claim_id: string; encounter_id: string }> }>(
+          '/claims?page_size=25',
+        );
+        const pendingDenials = await api<{ items: Array<{ denial_id: string; appeal_submitted_at: string | null }> }>(
+          '/denials?page_size=25',
+        );
 
-      const patientId = pick(patients.items ?? [])?.patient_id;
-      const sampleClaim = pick(openClaims.items ?? []);
-      const pendingDenial = (pendingDenials.items ?? []).find((d) => !d.appeal_submitted_at);
+        const patientId = pick(patients.items ?? [])?.patient_id;
+        const sampleClaim = pick(claims.items ?? []);
+        const pendingDenial = (pendingDenials.items ?? []).find((d) => !d.appeal_submitted_at);
 
-      const steps: BriefingStep[] = [
-        { label: 'Opening KPI snapshot', run: () => api('/agents/analytics/run', { method: 'POST', body: '{}' }) },
-      ];
-      if (patientId) {
-        steps.push({
-          label: 'Eligibility sweep',
-          run: () =>
-            api('/agents/eligibility/run', {
-              method: 'POST',
-              body: JSON.stringify({ patient_id: patientId, service_date: new Date().toISOString().slice(0, 10) }),
-            }),
-        });
-      }
-      if (sampleClaim?.encounter_id) {
-        steps.push({
-          label: 'Coding pass',
-          run: () =>
-            api('/agents/coding/run', {
-              method: 'POST',
-              body: JSON.stringify({ encounter_id: sampleClaim.encounter_id }),
-            }),
-        });
-      }
-      if (sampleClaim?.claim_id) {
-        steps.push({
-          label: 'Scrubbing outbound claim',
-          run: () =>
-            api('/agents/scrubbing/run', {
-              method: 'POST',
-              body: JSON.stringify({ claim_id: sampleClaim.claim_id }),
-            }),
-        });
-      }
-      steps.push({ label: 'Tracking open claims', run: () => api('/agents/tracking/run', { method: 'POST', body: '{}' }) });
-      if (pendingDenial?.denial_id) {
-        steps.push({
-          label: 'Denial triage',
-          run: () =>
-            api('/agents/denial/run', {
-              method: 'POST',
-              body: JSON.stringify({ denial_id: pendingDenial.denial_id }),
-            }),
-        });
-      }
-      steps.push({ label: 'Posting ERA batch', run: () => api('/agents/era-posting/run', { method: 'POST', body: '{}' }) });
-      steps.push({ label: 'Patient collections', run: () => api('/agents/collections/run', { method: 'POST', body: '{}' }) });
-      steps.push({ label: 'Closing KPI snapshot', run: () => api('/agents/analytics/run', { method: 'POST', body: '{}' }) });
+        const missing: string[] = [];
+        if (!patientId) missing.push('eligibility (no patient)');
+        if (!sampleClaim?.encounter_id) missing.push('coding (no encounter)');
+        if (!sampleClaim?.claim_id) missing.push('scrubbing (no claim)');
+        if (!pendingDenial?.denial_id) missing.push('denial (no pending denial)');
+        if (missing.length) {
+          throw new Error(
+            `Cannot run full 8-agent briefing — missing seed data for: ${missing.join(', ')}. ` +
+              'Reset the database via the Scenarios page and try again.',
+          );
+        }
 
-      for (const step of steps) {
-        setBriefingStep(step.label);
-        await step.run();
-        await new Promise((r) => setTimeout(r, 750));
+        const post = (path: string, body: string = '{}') =>
+          api<{ task_id: string }>(path, { method: 'POST', body });
+
+        const steps: BriefingStep[] = [
+          { label: 'Opening KPI snapshot', run: () => post('/agents/analytics/run') },
+          {
+            label: 'Eligibility sweep',
+            run: () =>
+              post(
+                '/agents/eligibility/run',
+                JSON.stringify({ patient_id: patientId, service_date: new Date().toISOString().slice(0, 10) }),
+              ),
+          },
+          {
+            label: 'Coding pass',
+            run: () => post('/agents/coding/run', JSON.stringify({ encounter_id: sampleClaim!.encounter_id })),
+          },
+          {
+            label: 'Scrubbing outbound claim',
+            run: () => post('/agents/scrubbing/run', JSON.stringify({ claim_id: sampleClaim!.claim_id })),
+          },
+          { label: 'Tracking open claims', run: () => post('/agents/tracking/run') },
+          {
+            label: 'Denial triage',
+            run: () => post('/agents/denial/run', JSON.stringify({ denial_id: pendingDenial!.denial_id })),
+          },
+          { label: 'Posting ERA batch', run: () => post('/agents/era-posting/run') },
+          { label: 'Patient collections', run: () => post('/agents/collections/run') },
+          { label: 'Closing KPI snapshot', run: () => post('/agents/analytics/run') },
+        ];
+
+        for (const step of steps) {
+          setBriefingStep(step.label);
+          const { task_id } = await step.run();
+          await waitForTask(task_id);
+        }
+        return steps.length;
+      } finally {
+        setBriefingStep(null);
       }
-      setBriefingStep(null);
-      return steps.length;
     },
-    onError: () => setBriefingStep(null),
+    onError: (err: Error) => setBriefingError(err.message),
   });
 
   return (
@@ -158,6 +172,15 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {briefingError && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 text-sm rounded p-3 flex justify-between">
+          <span>{briefingError}</span>
+          <button className="text-rose-600 hover:text-rose-800" onClick={() => setBriefingError(null)}>
+            dismiss
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4">
         {data?.cards.map((c) => (

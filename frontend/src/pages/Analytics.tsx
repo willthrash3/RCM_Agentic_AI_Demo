@@ -72,9 +72,11 @@ export default function Analytics() {
 
   const snapshotBaseline = () => {
     if (!dashboard?.cards) return;
-    const snap: BaselineSnapshot = { captured_at: new Date().toISOString(), cards: dashboard.cards };
-    localStorage.setItem(BASELINE_KEY, JSON.stringify(snap));
-    setBaseline(snap);
+    // Deep-clone via JSON round-trip so React Query ref reuse or downstream
+    // mutations can't drift the frozen baseline.
+    const serialized = JSON.stringify({ captured_at: new Date().toISOString(), cards: dashboard.cards });
+    localStorage.setItem(BASELINE_KEY, serialized);
+    setBaseline(JSON.parse(serialized) as BaselineSnapshot);
   };
   const clearBaseline = () => {
     localStorage.removeItem(BASELINE_KEY);
