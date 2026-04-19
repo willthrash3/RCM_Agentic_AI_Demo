@@ -2,7 +2,7 @@
   {
     "scenario_id": "payer_rule_change",
     "name": "Payer Rule Change",
-    "description": "BlueStar adds new LCD restriction on CPT 99214. Scrubbing agent flags 47 affected claims; coding agent re-reviews.",
+    "description": "BlueStar adds new LCD restriction on CPT 99214. Scrubbing agent flags 12 affected claims; coding agent re-reviews.",
     "inject": {
       "type": "add_edit_rule",
       "payer_id": "payer-003",
@@ -14,7 +14,7 @@
         "severity": "Critical"
       }
     },
-    "expected_outcome": "scrubbing_agent flags ~47 claims; analytics agent raises rule-change alert"
+    "expected_outcome": "scrubbing_agent flags ~12 claims; analytics agent raises rule-change alert"
   },
   {
     "scenario_id": "denial_spike",
